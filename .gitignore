@@ -169,3 +169,7 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# MATLAB libraries
+eeglab2024.2/
+fieldtrip-20250107/
