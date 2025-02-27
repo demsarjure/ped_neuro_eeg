@@ -11,7 +11,7 @@ import numpy as np
 
 
 # a helper function to convert a single CSV file to BIDS
-# ---------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 def convert_csv_to_bids(file_path, bids_root, subject_id, eeg_labels):
     """
     Load CSV data, create a RawArray, and write it in BIDS format.
@@ -20,7 +20,7 @@ def convert_csv_to_bids(file_path, bids_root, subject_id, eeg_labels):
         file_path (str): Path to the CSV file.
         bids_root (str): The root folder where the BIDS dataset will be stored.
         subject_id (str): Subject identifier (e.g., 'C-001' or 'T-001').
-        eeg_labels (pd.DataFrame): a dataframe with EEG labels and indexes.
+        eeg_labels (pd.DataFrame): a dataframe with eeg labels and indexes.
     """
     print(f"---> Converting {subject_id} to BIDS")
 
@@ -44,12 +44,21 @@ def convert_csv_to_bids(file_path, bids_root, subject_id, eeg_labels):
     )
     data = pd.DataFrame([line.split("\t") for line in data_lines], columns=columns)
 
-    # keep only EEG channels and rename
+    # keep only eeg, eog, emg and ecg channels and rename
     data = data[eeg_labels["channel"].tolist()]
     data.columns = eeg_labels["label"].tolist()
 
     # to np array
     data_array = data.values.astype(np.float64)
+
+    print(eeg_labels["label"].tolist())
+
+    # mne info
+    info = mne.create_info(
+        ch_names=eeg_labels["label"].tolist(),
+        ch_types=eeg_labels["description"].tolist(),
+        sfreq=250.0,
+    )
 
     # to RawArray
     raw = mne.io.RawArray(data_array.T, info)
@@ -58,7 +67,6 @@ def convert_csv_to_bids(file_path, bids_root, subject_id, eeg_labels):
     bids_path = BIDSPath(
         subject=subject_id,
         task="rest",
-        acquisition="eeg",
         datatype="eeg",
         root=bids_root,
     )
@@ -66,7 +74,11 @@ def convert_csv_to_bids(file_path, bids_root, subject_id, eeg_labels):
     # write to BIDS
     print("    ... saving")
     write_raw_bids(
-        raw, bids_path=bids_path, overwrite=True, allow_preload=True, format="BrainVision"
+        raw,
+        bids_path=bids_path,
+        overwrite=True,
+        allow_preload=True,
+        format="BrainVision",
     )
 
     print(f"   ... converted subject {subject_id} to BIDS")
@@ -75,23 +87,14 @@ def convert_csv_to_bids(file_path, bids_root, subject_id, eeg_labels):
 
 # define common parameters
 # ------------------------------------------------------------------------------
-# EEG channel names
+# eeg channel names
 # setup labels
 labels = pd.read_csv("../support_files/labels.csv")
-channel_names = labels[(labels["description"] == "EEG")]["label"].tolist()
-n_channels = len(channel_names)
-
-# create an MNE info object
-info = mne.create_info(
-    ch_names=channel_names, sfreq=250.0, ch_types=["eeg"] * n_channels
-)
-
-# remove non eeg labels and keep only label and channel columns
-labels = labels[labels["description"] == "EEG"]
-labels = labels[["label", "channel"]]
+labels = labels[labels["description"].isin(["eeg", "eog", "emg", "ecg"])]
+labels = labels[["label", "channel", "description"]]
 
 # loop through your files and convert them
-# ---------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # consts
 BIDS_ROOT = "../../ped_neuro_eeg_data/bids"
 DATA_DIR = "../../ped_neuro_eeg_data/export"
