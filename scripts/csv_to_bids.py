@@ -63,6 +63,10 @@ def convert_csv_to_bids(file_path, bids_root, subject_id, eeg_labels):
     # to RawArray
     raw = mne.io.RawArray(data_array.T, info)
 
+    # channel locations
+    montage = mne.channels.make_standard_montage("standard_1020")
+    raw.set_montage(montage, match_case=False, on_missing="ignore")
+
     # create a BIDSPath
     bids_path = BIDSPath(
         subject=subject_id,
