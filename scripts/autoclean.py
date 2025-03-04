@@ -17,11 +17,13 @@ BIDS_ROOT = "../../ped_neuro_eeg_data/bids"
 subjects = [sub for sub in os.listdir(BIDS_ROOT) if sub.startswith("sub-")]
 
 for sub in subjects:
-    # TODO: unset the subject
-    sub = "sub-T001"
-    print(f"---> Cleaning {sub}")
+    print(f"---> Cleaning {sub} [{subjects.index(sub) + 1}/{len(subjects)}]")
 
     subj_id = sub.split("-")[1]
+
+    group = "control"
+    if subj_id.startswith("T"):
+        group = "test"
 
     bids_path = BIDSPath(
         root=BIDS_ROOT,
@@ -81,7 +83,12 @@ for sub in subjects:
 
     # save
     print("    ... saving cleaned data")
-    save_path = os.path.join(BIDS_ROOT, sub, "eeg", f"{sub}_task-rest_cleaned_eeg.fif")
+    save_path = os.path.join(
+        "..",
+        "..",
+        "ped_neuro_eeg_data",
+        "cleaned",
+        group,
+        f"{sub}_task-rest_cleaned_eeg.fif",
+    )
     clean.save(save_path, overwrite=True)
-
-    os._exit(0)
