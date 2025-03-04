@@ -16,7 +16,13 @@ BIDS_ROOT = "../../ped_neuro_eeg_data/bids"
 # get subjects
 subjects = [sub for sub in os.listdir(BIDS_ROOT) if sub.startswith("sub-")]
 
+skip_until = "sub-C046"
+
 for sub in subjects:
+    if skip_until and sub != skip_until:
+        continue
+    skip_until = None
+
     print(f"---> Cleaning {sub} [{subjects.index(sub) + 1}/{len(subjects)}]")
 
     subj_id = sub.split("-")[1]
@@ -45,7 +51,7 @@ for sub in subjects:
 
     # re-reference to average reference
     print("    ... applying average reference")
-    raw.set_eeg_reference("average", projection=True)
+    raw.set_eeg_reference("average", projection=False)
 
     # find bad channels
     print("    ... detecting bad channels")
@@ -65,7 +71,11 @@ for sub in subjects:
     ica = ICA(n_components=20, max_iter="auto")
     ica.fit(raw)
     eog_indices, eog_scores = ica.find_bads_eog(raw)
-    ecg_indices, ecg_scores = ica.find_bads_ecg(raw)
+    try:
+        ecg_indices, ecg_scores = ica.find_bads_ecg(raw)
+    except TypeError as e:
+        print(f"    ... ECG artifact detection failed: {e}{str(e)}")
+        ecg_indices = []
     print(f"    ... components identified as EOG artifacts: {eog_indices}")
     print(f"    ... components identified as ECG artifacts: {ecg_indices}")
     ica.exclude = list(set(eog_indices) | set(ecg_indices))
