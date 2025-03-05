@@ -100,8 +100,8 @@ labels = labels[["label", "channel", "description"]]
 # loop through your files and convert them
 # ------------------------------------------------------------------------------
 # consts
-BIDS_ROOT = "../../ped_neuro_eeg_data/bids"
-DATA_DIR = "../../ped_neuro_eeg_data/export"
+BIDS_ROOT = "../ped_neuro_eeg_data/bids"
+DATA_DIR = "../ped_neuro_eeg_data/export"
 GROUPS = ["control", "test"]
 
 for group in GROUPS:

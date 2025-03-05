@@ -9,7 +9,7 @@ from mne_connectivity import spectral_connectivity_epochs
 
 # paths
 GROUP = "test"  # or control
-DATA_ROOT = "../../ped_neuro_eeg_data"
+DATA_ROOT = "../ped_neuro_eeg_data"
 CLEANED_DIR = os.path.join(DATA_ROOT, "cleaned", GROUP)
 CONNECTOME_DIR = os.path.join(DATA_ROOT, "connectomes", GROUP)
 

@@ -10,7 +10,7 @@ import pandas as pd
 import numpy as np
 
 # config
-DATA_ROOT = "../../ped_neuro_eeg_data"
+DATA_ROOT = "../ped_neuro_eeg_data"
 
 # electrode groups
 ELECTRODES = [
@@ -65,7 +65,7 @@ def calculate_modularity(connectome):
         float: The modularity value or np.nan if calculation fails.
     """
     try:
-        _, q = bct.community_louvain(connectome, B="negative_sym")
+        _, q = bct.community_louvain(connectome, B="negative_asym")
 
         return q
     except Exception as e:

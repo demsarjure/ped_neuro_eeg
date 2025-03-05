@@ -11,7 +11,7 @@ from mne.preprocessing import ICA
 from autoreject import get_rejection_threshold
 
 # consts
-BIDS_ROOT = "../../ped_neuro_eeg_data/bids"
+BIDS_ROOT = "../ped_neuro_eeg_data/bids"
 
 # get subjects
 subjects = [sub for sub in os.listdir(BIDS_ROOT) if sub.startswith("sub-")]
@@ -94,7 +94,6 @@ for sub in subjects:
     # save
     print("    ... saving cleaned data")
     save_path = os.path.join(
-        "..",
         "..",
         "ped_neuro_eeg_data",
         "cleaned",
