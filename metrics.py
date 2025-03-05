@@ -54,18 +54,18 @@ def load_connectome(file_path: str) -> np.ndarray:
         return None
 
 
-def calculate_modularity(connectome):
+def calculate_modularity(connectome: np.ndarray, min_value: float) -> float:
     """
     Calculate the modularity of a connectome.
 
     Args:
         connectome (numpy.ndarray): The connectome matrix.
-
-    Returns:
-        float: The modularity value or np.nan if calculation fails.
+        min_value (float): The minimum value to add to the connectome.
     """
     try:
-        _, q = bct.community_louvain(connectome, B="negative_asym")
+        # TODO: better implementation?
+        connectome += min_value
+        _, q = bct.community_louvain(connectome)
 
         return q
     except Exception as e:
@@ -103,6 +103,16 @@ def process_connectomes(group: str, connectome_dir: str) -> pd.DataFrame:
     connectome_files = glob(os.path.join(connectome_dir, "*.csv"))
 
     results = []
+
+    # get global min for modularity calculation
+    min_value = 0
+    print(f"    - getting min value")
+    for file in connectome_files:
+        connectome = load_connectome(file)
+        min_value = min(min_value, np.min(connectome))
+    print(f"    - global min value: {min_value}")
+    min_value = abs(min_value)
+
     for file in connectome_files:
         # get subject ID from filename
         filename = os.path.splitext(os.path.basename(file))[0]
@@ -113,7 +123,7 @@ def process_connectomes(group: str, connectome_dir: str) -> pd.DataFrame:
         connectome = load_connectome(file)
 
         # metrics
-        modularity = calculate_modularity(connectome)
+        modularity = calculate_modularity(connectome, min_value)
         ih_strength = calculate_ihs(connectome)
 
         # Append results
