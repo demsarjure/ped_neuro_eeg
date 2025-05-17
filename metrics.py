@@ -10,7 +10,7 @@ import pandas as pd
 import numpy as np
 
 # config
-DATA_ROOT = "../ped_neuro_eeg_data"
+CONNECTOME_DIR = os.path.join(".", "data", "connectomes")
 
 # electrode groups
 ELECTRODES = [
@@ -54,7 +54,7 @@ def load_connectome(file_path: str) -> np.ndarray:
         return None
 
 
-def calculate_modularity(connectome: np.ndarray, min_value: float) -> float:
+def calculate_modularity(connectome: np.ndarray) -> float:
     """
     Calculate the modularity of a connectome.
 
@@ -63,8 +63,8 @@ def calculate_modularity(connectome: np.ndarray, min_value: float) -> float:
         min_value (float): The minimum value to add to the connectome.
     """
     try:
-        # TODO: better implementation?
-        connectome += min_value
+        # to get positive values
+        connectome += 1
         _, q = bct.community_louvain(connectome)
 
         return q
@@ -104,15 +104,6 @@ def process_connectomes(group: str, connectome_dir: str) -> pd.DataFrame:
 
     results = []
 
-    # get global min for modularity calculation
-    min_value = 0
-    print(f"    - getting min value")
-    for file in connectome_files:
-        connectome = load_connectome(file)
-        min_value = min(min_value, np.min(connectome))
-    print(f"    - global min value: {min_value}")
-    min_value = abs(min_value)
-
     for file in connectome_files:
         # get subject ID from filename
         filename = os.path.splitext(os.path.basename(file))[0]
@@ -123,7 +114,7 @@ def process_connectomes(group: str, connectome_dir: str) -> pd.DataFrame:
         connectome = load_connectome(file)
 
         # metrics
-        modularity = calculate_modularity(connectome, min_value)
+        modularity = calculate_modularity(connectome)
         ih_strength = calculate_ihs(connectome)
 
         # Append results
@@ -145,7 +136,7 @@ for g in ["test", "control"]:
     print(f"---> Processing connectomes for group: {g}")
 
     # calculate metrics
-    cd = os.path.join(DATA_ROOT, "connectomes", g)
+    cd = os.path.join(CONNECTOME_DIR, g)
     results_df = process_connectomes(g, cd)
 
     # append
@@ -155,7 +146,7 @@ for g in ["test", "control"]:
 # combine and save results
 all_results = pd.concat(all_results)
 all_results.to_csv(
-    os.path.join(DATA_ROOT, "metrics", "connectome_metrics.csv"), index=False
+    os.path.join(".", "data", "connectome_metrics.csv"), index=False
 )
 print()
 print("---> All results saved to connectome_metrics.csv")
