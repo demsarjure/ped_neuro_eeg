@@ -4,6 +4,7 @@ the data in BIDS format.
 """
 
 import os
+
 import mne
 from mne_bids import write_raw_bids, BIDSPath
 import pandas as pd
@@ -23,9 +24,6 @@ def convert_csv_to_bids(file_path, bids_root, subject_id, eeg_labels):
         eeg_labels (pd.DataFrame): a dataframe with eeg labels and indexes.
     """
     print(f"---> Converting {subject_id} to BIDS")
-
-    # rename so it fits BIDS
-    subject_id = subject_id.replace("-", "")
 
     # load the data file
     print(f"    ... loading {file_path}")
@@ -93,19 +91,19 @@ def convert_csv_to_bids(file_path, bids_root, subject_id, eeg_labels):
 # ------------------------------------------------------------------------------
 # eeg channel names
 # setup labels
-labels = pd.read_csv("../support_files/labels.csv")
+labels = pd.read_csv("./support_files/labels.csv")
 labels = labels[labels["description"].isin(["eeg", "eog", "emg", "ecg"])]
 labels = labels[["label", "channel", "description"]]
 
 # loop through your files and convert them
 # ------------------------------------------------------------------------------
 # consts
-BIDS_ROOT = "../ped_neuro_eeg_data/bids"
-DATA_DIR = "../ped_neuro_eeg_data/export"
+BIDS_ROOT = "/mnt/d/work/ped_neuro_eeg_data/bids"
+DATA_ROOT = "/mnt/d/work/ped_neuro_eeg_data"
 GROUPS = ["control", "test"]
 
 for group in GROUPS:
-    group_data_dir = f"{DATA_DIR}/{group}"
+    group_data_dir = f"{DATA_ROOT}/{group}"
 
     for fname in os.listdir(group_data_dir):
         if fname.endswith(".txt"):
