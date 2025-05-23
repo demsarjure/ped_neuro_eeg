@@ -107,6 +107,4 @@ ggsave(
   units = "px",
   bg = "white"
 )
-
-
 paste0(round(mean(df_pairs$ge), 3), ", SE = ", round(sd(df_pairs$ge) / sqrt(nrow(df_pairs)), 2))
