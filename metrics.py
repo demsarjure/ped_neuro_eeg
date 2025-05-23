@@ -54,25 +54,6 @@ def load_connectome(file_path: str) -> np.ndarray:
         return None
 
 
-def calculate_modularity(connectome: np.ndarray) -> float:
-    """
-    Calculate the modularity of a connectome.
-
-    Args:
-        connectome (numpy.ndarray): The connectome matrix.
-        min_value (float): The minimum value to add to the connectome.
-    """
-    try:
-        # to get positive values
-        connectome += 1
-        _, q = bct.community_louvain(connectome)
-
-        return q
-    except Exception as e:
-        print(f"Error calculating modularity: {e}")
-        return np.nan
-
-
 def calculate_ihs(connectome: np.ndarray) -> float:
     """
     Calculate the interhemispheric strength of a connectome.
@@ -92,6 +73,21 @@ def calculate_ihs(connectome: np.ndarray) -> float:
     return ihs
 
 
+def calculate_ge(connectome: np.ndarray) -> float:
+    """
+    Calculate the global efficiency of a connectome.
+
+    Args:
+        connectome (np.ndarray): The connectome matrix.
+    """
+    try:
+        ge = bct.efficiency_wei(connectome)
+        return ge
+    except Exception as e:
+        print(f"Error in calculating global efficiency: {e}")
+        return np.nan
+
+
 def process_connectomes(group: str, connectome_dir: str) -> pd.DataFrame:
     """
     Process all connectomes and calculate metrics.
@@ -105,7 +101,7 @@ def process_connectomes(group: str, connectome_dir: str) -> pd.DataFrame:
     results = []
 
     for file in connectome_files:
-        # get subject ID from filename
+        # get subject id from filename
         filename = os.path.splitext(os.path.basename(file))[0]
         subject_id = filename.split("_")[0]
         print(f"    - processing {subject_id}")
@@ -113,17 +109,17 @@ def process_connectomes(group: str, connectome_dir: str) -> pd.DataFrame:
         # connectome
         connectome = load_connectome(file)
 
-        # metrics
-        modularity = calculate_modularity(connectome)
-        ih_strength = calculate_ihs(connectome)
+        # ihs
+        ihs = calculate_ihs(connectome)
+        ge = calculate_ge(connectome)
 
         # Append results
         results.append(
             {
-                "subject_id": subject_id,
+                "id": subject_id,
                 "group": group,
-                "modularity": modularity,
-                "ihs": ih_strength,
+                "ihs": ihs,
+                "ge": ge,
             }
         )
 
@@ -142,38 +138,15 @@ for g in ["test", "control"]:
     # append
     all_results.append(results_df)
 
+# append demographics
+dem_test = pd.read_csv(os.path.join(".", "data", "demographics_test.csv"))
+dem_control = pd.read_csv(os.path.join(".", "data", "demographics_control.csv"))
+demographics = pd.concat([dem_test, dem_control], ignore_index=True)
 
 # combine and save results
 all_results = pd.concat(all_results)
-all_results.to_csv(
-    os.path.join(".", "data", "connectome_metrics.csv"), index=False
-)
+all_results = all_results.merge(demographics, on="id", how="left")
+all_results.to_csv(os.path.join(".", "data", "connectome_metrics.csv"), index=False)
+
 print()
 print("---> All results saved to connectome_metrics.csv")
-
-# t test
-from scipy.stats import ttest_ind
-
-print()
-print("---> T-test results:")
-# modularity
-mod_test = all_results[all_results["group"] == "test"]["modularity"]
-mod_control = all_results[all_results["group"] == "control"]["modularity"]
-modularity_test = ttest_ind(mod_test, mod_control)
-print("    - Modularity:")
-print(f"        - mean test: {np.mean(mod_test)}")
-print(f"        - mean control: {np.mean(mod_control)}")
-print(f"        - t-statistic: {modularity_test.statistic}")
-print(f"        - p-value: {modularity_test.pvalue}")
-
-# interhemispheric strength
-ihs_test = all_results[all_results["group"] == "test"]["ihs"]
-ihs_control = all_results[all_results["group"] == "control"]["ihs"]
-ih_strength_test = ttest_ind(ihs_test, ihs_control)
-print("    - IHS:")
-print(f"        - mean test: {np.mean(ihs_test)}")
-print(f"        - mean control: {np.mean(ihs_control)}")
-print(f"        - t-statistic: {ih_strength_test.statistic}")
-print(f"        - p-value: {ih_strength_test.pvalue}")
-print()
-print("---> Done!")
