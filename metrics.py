@@ -37,6 +37,15 @@ ELECTRODES = [
 LEFT_ELECTRODES = ["Fp1", "F7", "F3", "T3", "C3", "T5", "P3", "O1"]
 RIGHT_ELECTRODES = ["Fp2", "F8", "F4", "T4", "C4", "T6", "P4", "O2"]
 
+# left anterior quadrant
+LAQ_ELECTRODES = ["Fp1", "F3", "F7"]
+# left posterior quadrant
+LPQ_ELECTRODES = ["P3", "O1", "T5"]
+# right anterior quadrant
+RAQ_ELECTRODES = ["Fp2", "F4", "F8"]
+# right posterior quadrant
+RPQ_ELECTRODES = ["P4", "O2", "T6"]
+
 
 def load_connectome(file_path: str) -> np.ndarray:
     """
@@ -51,26 +60,28 @@ def load_connectome(file_path: str) -> np.ndarray:
         return connectome
     except Exception as e:
         print(f"Error loading {file_path}: {e}")
-        return None
+        return np.ndarray([])
 
 
-def calculate_ihs(connectome: np.ndarray) -> float:
+def calculate_average_strength(
+    connectome: np.ndarray, electrode_array_1: list[str], electrode_array_2: list[str]
+) -> float:
     """
-    Calculate the interhemispheric strength of a connectome.
+    Calculate the average strength between two sets of electrodes.
 
     Args:
         connectome (np.ndarray): The connectome matrix.
+        electrode_array_1 (list[str]): The first array of electrodes.
+        electrode_array_2 (list[str]): The second array of electrodes.
     """
-    # sum of weights between left and right hemisphere electrodes
-    ihs = 0
+    strenghts = []
+    for e_1 in electrode_array_1:
+        idx_1 = ELECTRODES.index(e_1)
+        for e_2 in electrode_array_2:
+            idx_2 = ELECTRODES.index(e_2)
+            strenghts.append(connectome[idx_1, idx_2])
 
-    for le in LEFT_ELECTRODES:
-        l_idx = LEFT_ELECTRODES.index(le)
-        for re in RIGHT_ELECTRODES:
-            r_idx = RIGHT_ELECTRODES.index(re)
-            ihs += connectome[l_idx, r_idx]
-
-    return ihs
+    return float(np.mean(strenghts))
 
 
 def calculate_ge(connectome: np.ndarray) -> float:
@@ -109,8 +120,14 @@ def process_connectomes(group: str, connectome_dir: str) -> pd.DataFrame:
         # connectome
         connectome = load_connectome(file)
 
-        # ihs
-        ihs = calculate_ihs(connectome)
+        # metrics
+        lh_rh = calculate_average_strength(
+            connectome, LEFT_ELECTRODES, RIGHT_ELECTRODES
+        )
+        laq_raq = calculate_average_strength(connectome, LAQ_ELECTRODES, RAQ_ELECTRODES)
+        lpq_rpq = calculate_average_strength(connectome, LPQ_ELECTRODES, RPQ_ELECTRODES)
+        laq_rpq = calculate_average_strength(connectome, LAQ_ELECTRODES, RPQ_ELECTRODES)
+        raq_lpq = calculate_average_strength(connectome, RAQ_ELECTRODES, LPQ_ELECTRODES)
         ge = calculate_ge(connectome)
 
         # Append results
@@ -118,7 +135,11 @@ def process_connectomes(group: str, connectome_dir: str) -> pd.DataFrame:
             {
                 "id": subject_id,
                 "group": group,
-                "ihs": ihs,
+                "lh_rh": lh_rh,
+                "laq_raq": laq_raq,
+                "lpq_rpq": lpq_rpq,
+                "laq_rpq": laq_rpq,
+                "raq_lpq": raq_lpq,
                 "ge": ge,
             }
         )
