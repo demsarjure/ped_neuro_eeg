@@ -20,24 +20,24 @@ df_test_ge <- data.frame(
   x = df_metrics_test$age,
   y = y_test_ge
 )
-fit_test <- fit_simple_linear(
+fit_test_ge <- fit_simple_linear(
   x = df_test_ge$x,
   y = df_test_ge$y
 )
-compare_simple_linear(fit = fit_test)
-plot_simple_linear(fit = fit_test, data = df_test_ge)
+compare_simple_linear(fit = fit_test_ge)
+plot_simple_linear(fit = fit_test_ge, data = df_test_ge)
 
 # control
 df_control_ge <- data.frame(
   x = df_metrics_control$age,
   y = y_control_ge
 )
-fit_control <- fit_simple_linear(
+fit_control_ge <- fit_simple_linear(
   x = df_control_ge$x,
   y = df_control_ge$y
 )
-compare_simple_linear(fit = fit_control)
-plot_simple_linear(fit = fit_control, data = df_control_ge)
+compare_simple_linear(fit = fit_control_ge)
+plot_simple_linear(fit = fit_control_ge, data = df_control_ge)
 
 # lh_rh ------------------------------------------------------------------------
 # metric
@@ -49,21 +49,21 @@ df_test_lh_rh <- data.frame(
   x = df_metrics_test$age,
   y = y_test_lh_rh
 )
-fit_test <- fit_simple_linear(
+fit_test_lh_rh <- fit_simple_linear(
   x = df_test_lh_rh$x,
   y = df_test_lh_rh$y
 )
-compare_simple_linear(fit = fit_test)
-plot_simple_linear(fit = fit_test, data = df_test_lh_rh)
+compare_simple_linear(fit = fit_test_lh_rh)
+plot_simple_linear(fit = fit_test_lh_rh, data = df_test_lh_rh)
 
 # control
 df_control_lh_rh <- data.frame(
   x = df_metrics_control$age,
   y = y_control_lh_rh
 )
-fit_control <- fit_simple_linear(
+fit_control_lh_rh <- fit_simple_linear(
   x = df_control_lh_rh$x,
   y = df_control_lh_rh$y
 )
-compare_simple_linear(fit = fit_control)
-plot_simple_linear(fit = fit_control, data = df_control_lh_rh)
+compare_simple_linear(fit = fit_control_lh_rh)
+plot_simple_linear(fit = fit_control_lh_rh, data = df_control_lh_rh)
