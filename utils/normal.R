@@ -56,11 +56,11 @@ compare_two_normal <- function(fit1, label1, fit2, label2) {
 
   cat(paste0(
     "# P(", label1, " > ", label2, ") = ",
-    bigger_prob, " +/- ", bigger_se, "%\n"
+    bigger_prob, " ± ", bigger_se, "%\n"
   ))
   cat(paste0(
     "# P(", label1, " < ", label2, ") = ",
-    smaller_prob, " +/- ", smaller_se, "%\n"
+    smaller_prob, " ± ", smaller_se, "%\n"
   ))
 
   return(list(
@@ -114,11 +114,11 @@ compare_normal <- function(fit, constant = 0, label1 = "", label2 = "") {
   # print results
   cat(paste0(
     "# P(", label1, " > ", label2, ") = ",
-    bigger_prob, " +/- ", bigger_se, "%\n"
+    bigger_prob, " ± ", bigger_se, "%\n"
   ))
   cat(paste0(
     "# P(", label1, " < ", label2, ") = ",
-    smaller_prob, " +/- ", smaller_se, "%\n"
+    smaller_prob, " ± ", smaller_se, "%\n"
   ))
 
   return(list(
@@ -172,7 +172,7 @@ plot_comparison_normal <- function(fit, prob = NULL, constant = 0, ci = NULL) {
         y = 0.125,
         label = paste0(prob, "%"),
         size = 4,
-        color="grey20",
+        color = "grey20",
         hjust = 0.5
       )
   }

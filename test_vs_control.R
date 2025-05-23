@@ -5,7 +5,6 @@ source("./utils/normal.R")
 
 df_metrics <- read_csv("./data/connectome_metrics.csv")
 
-
 # pairs ------------------------------------------------------------------------
 age_difference <- 1
 
@@ -21,21 +20,93 @@ df_pairs <- df_test %>%
   transmute(
     id = id_test,
     id_control = id_control,
-    ihs = ihs_test - ihs_control,
+    lh_rh = lh_rh_test - lh_rh_control,
+    laq_raq = laq_raq_test - laq_raq_control,
+    lpq_rpq = lpq_rpq_test - lpq_rpq_control,
+    laq_rpq = laq_rpq_test - laq_rpq_control,
+    raq_lpq = raq_lpq_test - raq_lpq_control,
     ge = ge_test - ge_control,
-    age_difference= abs(age_test - age_control)
+    age_difference = abs(age_test - age_control)
   )
 
-# ihs --------------------------------------------------------------------------
-fit_ihs <- fit_normal(df_pairs$ihs)
-results <- compare_normal(
-    fit = fit_ihs, label1 = "test", label2 = "control"
-)
-plot_comparison_normal(fit = fit_ihs)
+# subset df_test and df_control to only include ids in df_pairs
+paste0("Test size before: ", nrow(df_test))
+df_test <- df_test %>%
+  filter(id %in% df_pairs$id)
+paste0("Test size after: ", nrow(df_test))
 
-# ge --------------------------------------------------------------------------
+paste0("Control size before: ", nrow(df_control))
+df_control <- df_control %>%
+  filter(id %in% df_pairs$id_control)
+paste0("Control size after: ", nrow(df_control))
+
+# demographics
+paste0("Min age test: ", min(df_test$age))
+paste0("Min age control: ", min(df_control$age))
+paste0("Max age test: ", max(df_test$age))
+paste0("Max age control: ", max(df_control$age))
+paste0(
+  "Test: M =  ", nrow(df_test[df_test$sex == "M", ]),
+  ", F = ", nrow(df_test[df_test$sex != "M", ])
+)
+paste0(
+  "Control: M =  ", nrow(df_control[df_control$sex == "M", ]),
+  ", F = ", nrow(df_control[df_control$sex != "M", ])
+)
+
+# lh_rh ------------------------------------------------------------------------
+fit_lh_rh <- fit_normal(df_pairs$lh_rh)
+results <- compare_normal(
+  fit = fit_lh_rh, label1 = "test", label2 = "control"
+)
+paste0(round(mean(df_pairs$lh_rh), 2), ", SE = ", round(sd(df_pairs$lh_rh) / sqrt(nrow(df_pairs)), 2))
+
+# laq_raq ----------------------------------------------------------------------
+fit_laq_raq <- fit_normal(df_pairs$laq_raq)
+results <- compare_normal(
+  fit = fit_laq_raq, label1 = "test", label2 = "control"
+)
+paste0(round(mean(df_pairs$laq_raq), 2), ", SE = ", round(sd(df_pairs$laq_raq) / sqrt(nrow(df_pairs)), 2))
+
+# lpq_rpq ----------------------------------------------------------------------
+fit_lpq_rpq <- fit_normal(df_pairs$lpq_rpq)
+results <- compare_normal(
+  fit = fit_lpq_rpq, label1 = "test", label2 = "control"
+)
+paste0(round(mean(df_pairs$lpq_rpq), 2), ", SE = ", round(sd(df_pairs$lpq_rpq) / sqrt(nrow(df_pairs)), 2))
+
+# laq_rpq ----------------------------------------------------------------------
+fit_laq_rpq <- fit_normal(df_pairs$laq_rpq)
+results <- compare_normal(
+  fit = fit_laq_rpq, label1 = "test", label2 = "control"
+)
+paste0(round(mean(df_pairs$laq_rpq), 2), ", SE = ", round(sd(df_pairs$laq_rpq) / sqrt(nrow(df_pairs)), 2))
+
+# raq_lpq ----------------------------------------------------------------------
+fit_raq_lpq <- fit_normal(df_pairs$raq_lpq)
+results <- compare_normal(
+  fit = fit_raq_lpq, label1 = "test", label2 = "control"
+)
+paste0(round(mean(df_pairs$raq_lpq), 2), ", SE = ", round(sd(df_pairs$raq_lpq) / sqrt(nrow(df_pairs)), 2))
+
+# ge ---------------------------------------------------------------------------
 fit_ge <- fit_normal(df_pairs$ge)
 results <- compare_normal(
-    fit = fit_ge, label1 = "test", label2 = "control"
+  fit = fit_ge, label1 = "test", label2 = "control"
 )
-plot_comparison_normal(fit = fit_ge)
+plot_comparison_normal(fit = fit_ge) +
+  ggtitle("Global efficiency") +
+  xlim(-0.04, 0.04) +
+  xlab("Mean difference") +
+  theme(plot.title = element_text(hjust = 0.5))
+ggsave(
+  "./figures/ge.png",
+  width = 1920,
+  height = 1080,
+  dpi = 150,
+  units = "px",
+  bg = "white"
+)
+
+
+paste0(round(mean(df_pairs$ge), 3), ", SE = ", round(sd(df_pairs$ge) / sqrt(nrow(df_pairs)), 2))

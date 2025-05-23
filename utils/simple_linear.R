@@ -58,11 +58,11 @@ compare_simple_linear <- function(fit, constant = 0) {
   # print results
   cat(paste0(
     "# P(b > ", constant, ") = ",
-    positive_prob, " +/- ", positive_se, "%\n"
+    positive_prob, " ± ", positive_se, "%\n"
   ))
   cat(paste0(
     "# P(b < ", constant, ") = ",
-    negative_prob, " +/- ", negative_se, "%\n"
+    negative_prob, " ± ", negative_se, "%\n"
   ))
 
   return(list(
@@ -100,7 +100,7 @@ plot_simple_linear <- function(fit, data) {
     median_qi(y, .width = c(.50, .90)) %>%
     ggplot() +
     geom_lineribbon(aes(x = x, y = y, ymin = .lower, ymax = .upper), show.legend = FALSE, linewidth = 0.5) +
-    geom_point(data = data, aes(x = x, y = y), color = "black", alpha=0.2, shape = 16) +
+    geom_point(data = data, aes(x = x, y = y), color = "black", alpha = 0.2, shape = 16) +
     scale_fill_brewer() +
     theme_minimal()
 
