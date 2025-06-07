@@ -21,7 +21,7 @@ GROUPS = ["test", "control"]
 # frequencies - extended alpha band
 BANDS = {
     "theta": [3, 7],
-    "alpha": [7, 14],
+    "alpha": [8, 13],
 }
 
 # create output directory
@@ -52,20 +52,15 @@ def process_subject(subject, band):
     )
     basename = os.path.basename(eeg_file)
 
-    # load
-    raw = mne.io.read_raw_fif(eeg_file, preload=True)
+    if not os.path.exists(eeg_file):
+        print(f"---> File {basename} does not exist, skipping subject {sub_id}.")
+        return
 
-    # 20 minutes = 100 epochs
-    total_duration = raw.times[-1]
-    middle_point = total_duration / 2
-    t_min = max(0, middle_point - (50 * 12))
-    t_max = min(total_duration, middle_point + (50 * 12))
-    raw.crop(tmin=t_min, tmax=t_max)
+    # load
+    raw = mne.io.read_raw_fif(eeg_file)
 
     # epoch
-    epochs = mne.make_fixed_length_epochs(
-        raw, duration=12, overlap=12 / 2, preload=True
-    )
+    epochs = mne.make_fixed_length_epochs(raw, duration=1)
 
     # dPLI
     result = spectral_connectivity_epochs(

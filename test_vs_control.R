@@ -98,11 +98,11 @@ results <- compare_normal(
 )
 plot_comparison_normal(fit = fit_ge) +
   ggtitle("Global efficiency") +
-  xlim(-0.5, 0.5) +
+  xlim(-0.005, 0.005) +
   xlab("Mean difference") +
   theme(plot.title = element_text(hjust = 0.5))
 ggsave(
-  "./figures/ge.png",
+  paste0("./figures/ge_", band, ".png"),
   width = 1920,
   height = 1080,
   dpi = 150,
