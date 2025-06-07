@@ -4,10 +4,11 @@ library(tidyverse)
 source("./utils/normal.R")
 
 # load data --------------------------------------------------------------------
-df_metrics <- read_csv("./data/connectome_metrics.csv")
+band <- "alpha"
+df_metrics <- read_csv(paste0("./data/connectome_metrics_", band, ".csv"))
 
 # pairs ------------------------------------------------------------------------
-age_difference <- 1
+age_difference <- 0
 
 df_test <- df_metrics %>%
   filter(group == "test")
@@ -97,7 +98,7 @@ results <- compare_normal(
 )
 plot_comparison_normal(fit = fit_ge) +
   ggtitle("Global efficiency") +
-  xlim(-0.04, 0.04) +
+  xlim(-0.5, 0.5) +
   xlab("Mean difference") +
   theme(plot.title = element_text(hjust = 0.5))
 ggsave(

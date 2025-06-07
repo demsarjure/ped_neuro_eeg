@@ -19,12 +19,6 @@ BIDS_ROOT = "/mnt/d/work/ped_neuro_eeg_data/bids"
 # get subjects
 subjects = [subject for subject in os.listdir(BIDS_ROOT) if subject.startswith("sub-")]
 
-# epoch
-EPOCH = 12
-
-# frequencies - extended alpha band
-LOW_FREQ = 7
-HIGH_FREQ = 14
 
 def process_subject(subject):
     sub_id = subject.split("-")[1]
@@ -46,14 +40,14 @@ def process_subject(subject):
     raw.load_data()
 
     # band-pass
-    raw.filter(l_freq=LOW_FREQ, h_freq=HIGH_FREQ)
-    raw._data = np.nan_to_num(raw.get_data())
+    raw.filter(l_freq=0.5, h_freq=40)
+    raw._data[:] = np.nan_to_num(raw.get_data())
 
     # re-reference to average reference
     raw.set_eeg_reference("average", projection=False)
 
     # find bad channels
-    epochs = mne.make_fixed_length_epochs(raw, duration=EPOCH)
+    epochs = mne.make_fixed_length_epochs(raw, duration=6)
     reject = get_rejection_threshold(epochs)
     epochs.drop_bad(reject=reject)
     bads = epochs.info["bads"]
@@ -63,7 +57,7 @@ def process_subject(subject):
         raw.interpolate_bads(reset_bads=True)
 
     # ICA
-    ica = ICA(n_components=20, max_iter="auto")
+    ica = ICA(n_components=None, max_iter="auto")
     ica.fit(raw)
     eog_indices, eog_scores = ica.find_bads_eog(raw)
     try:
@@ -87,17 +81,17 @@ def process_subject(subject):
     clean.save(save_path, overwrite=True)
 
     print()
-    print("--------------------------------------------------------------------------------")
+    print(
+        "--------------------------------------------------------------------------------"
+    )
     print(f"---> {subject} cleaned")
-    print("--------------------------------------------------------------------------------")
+    print(
+        "--------------------------------------------------------------------------------"
+    )
     print()
 
+
 if __name__ == "__main__":
-    Parallel(
-        n_jobs=multiprocessing.cpu_count(),
-        backend="loky",
-        verbose=5
-    )(
-        delayed(process_subject)(subject)
-        for subject in subjects
+    Parallel(n_jobs=multiprocessing.cpu_count(), backend="loky", verbose=5)(
+        delayed(process_subject)(subject) for subject in subjects
     )
