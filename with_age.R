@@ -5,7 +5,8 @@ library(cowplot)
 source("./utils/simple_linear.R")
 
 # load data --------------------------------------------------------------------
-df_metrics <- read_csv("./data/connectome_metrics.csv")
+band <- "alpha"
+df_metrics <- read_csv(paste0("./data/connectome_metrics_", band, ".csv"))
 df_metrics_test <- df_metrics %>%
   filter(group == "test")
 df_metrics_control <- df_metrics %>%
@@ -52,7 +53,7 @@ ge_plots[["control"]] <- plot_simple_linear(fit = fit_control_ge, data = df_cont
 
 plot_grid(plotlist = ge_plots, ncol = 2, scale = 0.9)
 ggsave(
-  "./figures/ge_age.png",
+  paste0("./figures/ge_age_", band, ".png",
   width = 1920,
   height = 1080,
   dpi = 150,
@@ -100,7 +101,7 @@ lh_rh_plots[["control"]] <- plot_simple_linear(fit = fit_control_lh_rh, data = d
 
 plot_grid(plotlist = lh_rh_plots, ncol = 2, scale = 0.9)
 ggsave(
-  "./figures/ihs_age.png",
+  paste0("./figures/ihs_age_", band, ".png",
   width = 1920,
   height = 1080,
   dpi = 150,

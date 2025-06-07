@@ -120,54 +120,67 @@ def process_connectomes(group: str, connectome_dir: str) -> pd.DataFrame:
         # connectome
         connectome = load_connectome(file)
 
-        # metrics
-        lh_rh = calculate_average_strength(
-            connectome, LEFT_ELECTRODES, RIGHT_ELECTRODES
-        )
-        laq_raq = calculate_average_strength(connectome, LAQ_ELECTRODES, RAQ_ELECTRODES)
-        lpq_rpq = calculate_average_strength(connectome, LPQ_ELECTRODES, RPQ_ELECTRODES)
-        laq_rpq = calculate_average_strength(connectome, LAQ_ELECTRODES, RPQ_ELECTRODES)
-        raq_lpq = calculate_average_strength(connectome, RAQ_ELECTRODES, LPQ_ELECTRODES)
-        ge = calculate_ge(connectome)
+        # if nan in connectome or only contains 0 and 1, skip
+        if not np.isnan(connectome).any() and np.unique(connectome).size > 2:
+            # metrics
+            lh_rh = calculate_average_strength(
+                connectome, LEFT_ELECTRODES, RIGHT_ELECTRODES
+            )
+            laq_raq = calculate_average_strength(
+                connectome, LAQ_ELECTRODES, RAQ_ELECTRODES
+            )
+            lpq_rpq = calculate_average_strength(
+                connectome, LPQ_ELECTRODES, RPQ_ELECTRODES
+            )
+            laq_rpq = calculate_average_strength(
+                connectome, LAQ_ELECTRODES, RPQ_ELECTRODES
+            )
+            raq_lpq = calculate_average_strength(
+                connectome, RAQ_ELECTRODES, LPQ_ELECTRODES
+            )
+            ge = calculate_ge(connectome)
 
-        # Append results
-        results.append(
-            {
-                "id": subject_id,
-                "group": group,
-                "lh_rh": lh_rh,
-                "laq_raq": laq_raq,
-                "lpq_rpq": lpq_rpq,
-                "laq_rpq": laq_rpq,
-                "raq_lpq": raq_lpq,
-                "ge": ge,
-            }
-        )
+            # Append results
+            results.append(
+                {
+                    "id": subject_id,
+                    "group": group,
+                    "lh_rh": lh_rh,
+                    "laq_raq": laq_raq,
+                    "lpq_rpq": lpq_rpq,
+                    "laq_rpq": laq_rpq,
+                    "raq_lpq": raq_lpq,
+                    "ge": ge,
+                }
+            )
 
     # to df
     return pd.DataFrame(results)
 
 
-all_results = []
-for g in ["test", "control"]:
-    print(f"---> Processing connectomes for group: {g}")
+for band in ["theta", "alpha"]:
+    all_results = []
+    for g in ["test", "control"]:
+        print(f"---> Processing {band} connectomes for group: {g}")
 
-    # calculate metrics
-    cd = os.path.join(CONNECTOME_DIR, g)
-    results_df = process_connectomes(g, cd)
+        # calculate metrics
+        cd = os.path.join(CONNECTOME_DIR, g, band)
+        results_df = process_connectomes(g, cd)
 
-    # append
-    all_results.append(results_df)
+        # append
+        all_results.append(results_df)
 
-# append demographics
-dem_test = pd.read_csv(os.path.join(".", "data", "demographics_test.csv"))
-dem_control = pd.read_csv(os.path.join(".", "data", "demographics_control.csv"))
-demographics = pd.concat([dem_test, dem_control], ignore_index=True)
+    # append demographics
+    dem_test = pd.read_csv(os.path.join(".", "data", "demographics_test.csv"))
+    dem_control = pd.read_csv(os.path.join(".", "data", "demographics_control.csv"))
+    demographics = pd.concat([dem_test, dem_control], ignore_index=True)
 
-# combine and save results
-all_results = pd.concat(all_results)
-all_results = all_results.merge(demographics, on="id", how="left")
-all_results.to_csv(os.path.join(".", "data", "connectome_metrics.csv"), index=False)
+    # combine and save results
+    all_results = pd.concat(all_results)
+    all_results = all_results.merge(demographics, on="id", how="left")
+    all_results.to_csv(
+        os.path.join(".", "data", f"connectome_metrics_{band}.csv"), index=False
+    )
 
-print()
-print("---> All results saved to connectome_metrics.csv")
+    print()
+    print("---> All results saved to connectome_metrics.csv")
