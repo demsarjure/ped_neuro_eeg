@@ -34,7 +34,8 @@ compare_simple_linear(fit = fit_test_ge)
 ge_plots[["test"]] <- plot_simple_linear(fit = fit_test_ge, data = df_test_ge) +
   ggtitle("Test group") +
   xlab("Age (years)") +
-  ylab("Global efficiency (GE)")
+  ylab("Global efficiency (GE)") +
+  ylim(-0.02, 0.02)
 
 # control
 df_control_ge <- data.frame(
@@ -49,11 +50,12 @@ compare_simple_linear(fit = fit_control_ge)
 ge_plots[["control"]] <- plot_simple_linear(fit = fit_control_ge, data = df_control_ge) +
   ggtitle("Control group") +
   xlab("Age (years)") +
-  ylab("Global efficiency (GE)")
+  ylab("Global efficiency (GE)") +
+  ylim(-0.02, 0.02)
 
 plot_grid(plotlist = ge_plots, ncol = 2, scale = 0.9)
 ggsave(
-  paste0("./figures/ge_age_", band, ".png",
+  paste0("./figures/ge_age_", band, ".png"),
   width = 1920,
   height = 1080,
   dpi = 150,
@@ -101,7 +103,7 @@ lh_rh_plots[["control"]] <- plot_simple_linear(fit = fit_control_lh_rh, data = d
 
 plot_grid(plotlist = lh_rh_plots, ncol = 2, scale = 0.9)
 ggsave(
-  paste0("./figures/ihs_age_", band, ".png",
+  paste0("./figures/ihs_age_", band, ".png"),
   width = 1920,
   height = 1080,
   dpi = 150,

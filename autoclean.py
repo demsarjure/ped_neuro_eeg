@@ -39,6 +39,13 @@ def process_subject(subject):
     raw = read_raw_bids(bids_path=bids_path, verbose=False)
     raw.load_data()
 
+    # keep 100 middle 1s epochs
+    total_duration = raw.times[-1]
+    middle_point = total_duration / 2
+    t_min = max(0, middle_point - 50)
+    t_max = min(total_duration, middle_point + 50)
+    raw.crop(tmin=t_min, tmax=t_max)
+
     # band-pass
     raw.filter(l_freq=0.5, h_freq=40)
     raw._data[:] = np.nan_to_num(raw.get_data())
@@ -47,7 +54,7 @@ def process_subject(subject):
     raw.set_eeg_reference("average", projection=False)
 
     # find bad channels
-    epochs = mne.make_fixed_length_epochs(raw, duration=6)
+    epochs = mne.make_fixed_length_epochs(raw, duration=1)
     reject = get_rejection_threshold(epochs)
     epochs.drop_bad(reject=reject)
     bads = epochs.info["bads"]
@@ -57,38 +64,42 @@ def process_subject(subject):
         raw.interpolate_bads(reset_bads=True)
 
     # ICA
-    ica = ICA(n_components=None, max_iter="auto")
-    ica.fit(raw)
-    eog_indices, eog_scores = ica.find_bads_eog(raw)
     try:
-        ecg_indices, ecg_scores = ica.find_bads_ecg(raw)
-    except TypeError as e:
-        print(f"    ... ECG artifact detection failed: {e}{str(e)}")
-        ecg_indices = []
-    ica.exclude = list(set(eog_indices) | set(ecg_indices))
-    clean = ica.apply(raw.copy())
+        ica = ICA(n_components=None, max_iter="auto")
+        ica.fit(raw)
+        eog_indices, eog_scores = ica.find_bads_eog(raw)
+        try:
+            ecg_indices, ecg_scores = ica.find_bads_ecg(raw)
+        except TypeError as e:
+            print(f"    ... ECG artifact detection failed: {e}{str(e)}")
+            ecg_indices = []
+        ica.exclude = list(set(eog_indices) | set(ecg_indices))
+        clean = ica.apply(raw.copy())
 
-    # keep only EEG channels, drop also A1 and A2
-    clean.pick(picks="eeg", exclude=["A1", "A2"])
+        # keep only EEG channels, drop also A1 and A2
+        clean.pick(picks="eeg", exclude=["A1", "A2"])
 
-    # save
-    save_path = os.path.join(
-        BIDS_ROOT,
-        subject,
-        "eeg",
-        f"{subject}_task-rest_cleaned_eeg.fif",
-    )
-    clean.save(save_path, overwrite=True)
+        # save
+        save_path = os.path.join(
+            BIDS_ROOT,
+            subject,
+            "eeg",
+            f"{subject}_task-rest_cleaned_eeg.fif",
+        )
+        clean.save(save_path, overwrite=True)
 
-    print()
-    print(
-        "--------------------------------------------------------------------------------"
-    )
-    print(f"---> {subject} cleaned")
-    print(
-        "--------------------------------------------------------------------------------"
-    )
-    print()
+        print()
+        print(
+            "--------------------------------------------------------------------------------"
+        )
+        print(f"---> {subject} cleaned")
+        print(
+            "--------------------------------------------------------------------------------"
+        )
+        print()
+    except Exception as e:
+        print(f"    ... {subject} failed: {e}")
+        print()
 
 
 if __name__ == "__main__":
