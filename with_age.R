@@ -12,6 +12,31 @@ df_metrics_test <- df_metrics %>%
 df_metrics_control <- df_metrics %>%
   filter(group == "control")
 
+df_pairs <- df_metrics_test %>%
+  inner_join(df_metrics_control, by = "sex", suffix = c("_test", "_control")) %>%
+  filter(abs(age_test - age_control) <= age_difference) %>%
+  transmute(
+    id = id_test,
+    id_control = id_control,
+    lh_rh = lh_rh_test - lh_rh_control,
+    laq_raq = laq_raq_test - laq_raq_control,
+    lpq_rpq = lpq_rpq_test - lpq_rpq_control,
+    laq_rpq = laq_rpq_test - laq_rpq_control,
+    raq_lpq = raq_lpq_test - raq_lpq_control,
+    ge = ge_test - ge_control,
+    age_difference = abs(age_test - age_control)
+  )
+
+test_ids <- unique(df_pairs$id)
+control_ids <- unique(df_pairs$id_control)
+
+# subset df_metrics_test and df_metrics_control to only include ids in df_pairs
+df_metrics_test <- df_metrics_test %>%
+  filter(id %in% test_ids)
+df_metrics_control <- df_metrics_control %>%
+  filter(id %in% control_ids)
+
+
 # ge ---------------------------------------------------------------------------
 # plot storage
 ge_plots <- list()
