@@ -75,17 +75,17 @@ matrix_plot <- function(filename, title = "", legend = FALSE) {
 }
 
 # connectome plots
-p1 <- matrix_plot("./data/connectomes/test/alpha/T017_alpha_task-rest_connectome_eeg.csv", title = "Test patient")
+p1 <- matrix_plot("./data/connectomes/test/alpha/T003_alpha_task-rest_connectome_eeg.csv", title = "Test patient")
 p1
-p2 <- matrix_plot("./data/connectomes/control/alpha/C004_alpha_task-rest_connectome_eeg.csv", title = "Control patient")
+p2 <- matrix_plot("./data/connectomes/control/alpha/C028_alpha_task-rest_connectome_eeg.csv", title = "Control patient")
 p2
 
-plot_grid(p1, p2, ncol = 2, scale = 0.95) +
+plot_grid(p1, p2, ncol = 2, scale = 0.9) +
   theme(plot.background = element_rect(fill = "white", color = NA))
 
-ggsave(paste0("fc_plot.png"),
+ggsave(paste0("./figures/connectomes.png"),
   width = 3840,
-  height = 1400,
+  height = 2160,
   dpi = 300,
   units = "px"
 )
