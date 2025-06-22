@@ -75,9 +75,9 @@ matrix_plot <- function(filename, title = "", legend = FALSE) {
 }
 
 # connectome plots
-p1 <- matrix_plot("./data/connectomes/test/alpha/T003_alpha_task-rest_connectome_eeg.csv", title = "Test patient")
+p1 <- matrix_plot("./data/connectomes/test/alpha/T003_alpha_task-rest_connectome_eeg.csv", title = "Test participant")
 p1
-p2 <- matrix_plot("./data/connectomes/control/alpha/C028_alpha_task-rest_connectome_eeg.csv", title = "Control patient")
+p2 <- matrix_plot("./data/connectomes/control/alpha/C028_alpha_task-rest_connectome_eeg.csv", title = "Control participant")
 p2
 
 plot_grid(p1, p2, ncol = 2, scale = 0.9) +
