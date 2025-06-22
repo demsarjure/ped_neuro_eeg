@@ -62,8 +62,8 @@ matrix_plot <- function(filename, title = "", legend = FALSE) {
       panel.grid.minor = element_blank(),
       text = element_text(size = 18)
     ) +
-    xlab("Right Hemisphere") +
-    ylab("Left Hemisphere") +
+    xlab("Right hemisphere electrodes") +
+    ylab("Left hemisphere electrodes") +
     ggtitle(title) +
     theme(plot.title = element_text(hjust = 0.5))
 
