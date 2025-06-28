@@ -23,10 +23,6 @@ subjects = [subject for subject in os.listdir(BIDS_ROOT) if subject.startswith("
 def process_subject(subject):
     sub_id = subject.split("-")[1]
 
-    group = "control"
-    if sub_id.startswith("T"):
-        group = "test"
-
     bids_path = BIDSPath(
         root=BIDS_ROOT,
         subject=sub_id,
