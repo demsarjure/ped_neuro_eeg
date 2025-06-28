@@ -49,6 +49,16 @@ def process_subject(subject):
     # re-reference to average reference
     raw.set_eeg_reference("average", projection=False)
 
+    # find bad channels
+    epochs = mne.make_fixed_length_epochs(raw, duration=1)
+    reject = get_rejection_threshold(epochs)
+    epochs.drop_bad(reject=reject)
+    bads = epochs.info["bads"]
+
+    if bads:
+        raw.info["bads"] = bads
+        raw.interpolate_bads(reset_bads=True)
+
     # ICA
     try:
         ica = ICA(n_components=None, max_iter="auto")
@@ -64,16 +74,6 @@ def process_subject(subject):
 
         # keep only EEG channels, drop also A1 and A2
         clean.pick(picks="eeg", exclude=["A1", "A2"])
-
-        # find bad channels
-        epochs = mne.make_fixed_length_epochs(clean, duration=1)
-        reject = get_rejection_threshold(epochs)
-        epochs.drop_bad(reject=reject)
-        bads = epochs.info["bads"]
-
-        if bads:
-            clean.info["bads"] = bads
-            clean.interpolate_bads(reset_bads=True)
 
         # save
         save_path = os.path.join(
