@@ -74,14 +74,14 @@ def calculate_average_strength(
         electrode_array_1 (list[str]): The first array of electrodes.
         electrode_array_2 (list[str]): The second array of electrodes.
     """
-    strenghts = []
+    strengths = []
     for e_1 in electrode_array_1:
         idx_1 = ELECTRODES.index(e_1)
         for e_2 in electrode_array_2:
             idx_2 = ELECTRODES.index(e_2)
-            strenghts.append(connectome[idx_1, idx_2])
+            strengths.append(connectome[idx_1, idx_2])
 
-    return float(np.mean(strenghts))
+    return float(np.mean(strengths))
 
 
 def calculate_ge(connectome: np.ndarray) -> float:
