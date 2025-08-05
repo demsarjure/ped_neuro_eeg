@@ -32,8 +32,8 @@ df_pairs <- df_test %>%
   )
 
 # subset df_test and df_control to only include ids in df_pairs
-paste0("Test size before: ", nrow(df_test))
-paste0("Control size before: ", nrow(df_control))
+paste0("Test size: ", nrow(df_test))
+paste0("Control size: ", nrow(df_control))
 
 # demographics
 paste0("Min age test: ", min(df_test$age))
