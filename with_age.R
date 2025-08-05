@@ -7,6 +7,10 @@ source("./utils/simple_linear.R")
 # load data --------------------------------------------------------------------
 band <- "alpha"
 df_metrics <- read_csv(paste0("./data/connectome_metrics_", band, ".csv"))
+
+# pairs ------------------------------------------------------------------------
+age_difference <- 0
+
 df_metrics_test <- df_metrics %>%
   filter(group == "test")
 df_metrics_control <- df_metrics %>%
