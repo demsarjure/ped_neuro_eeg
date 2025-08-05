@@ -31,7 +31,11 @@ df_pairs <- df_test %>%
     age_difference = abs(age_test - age_control)
   )
 
-# subset df_test and df_control to only include ids in df_pairs
+# subset df_test and df_control to only include ids in df_pairsque(df_pairs$id)
+df_test <- df_test %>%
+  filter(id %in% unique(df_pairs$id))
+df_control <- df_control %>%
+  filter(id %in% unique(df_pairs$id_control))
 paste0("Test size: ", nrow(df_test))
 paste0("Control size: ", nrow(df_control))
 
