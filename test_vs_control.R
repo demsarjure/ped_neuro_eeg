@@ -101,3 +101,11 @@ ggsave(
   units = "px",
   bg = "white"
 )
+ggsave(
+  paste0("./figures/ge_", band, ".pdf"),
+  width = 1920,
+  height = 1080,
+  dpi = 150,
+  units = "px",
+  bg = "white"
+)

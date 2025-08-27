@@ -89,3 +89,10 @@ ggsave(paste0("./figures/connectomes.png"),
   dpi = 300,
   units = "px"
 )
+
+ggsave(paste0("./figures/connectomes.pdf"),
+  width = 3840,
+  height = 2160,
+  dpi = 300,
+  units = "px"
+)

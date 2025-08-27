@@ -91,6 +91,14 @@ ggsave(
   units = "px",
   bg = "white"
 )
+ggsave(
+  paste0("./figures/ge_age_", band, ".pdf"),
+  width = 1920,
+  height = 1080,
+  dpi = 150,
+  units = "px",
+  bg = "white"
+)
 
 # lh_rh ------------------------------------------------------------------------
 # plot storage
@@ -133,6 +141,14 @@ lh_rh_plots[["control"]] <- plot_simple_linear(fit = fit_control_lh_rh, data = d
 plot_grid(plotlist = lh_rh_plots, ncol = 2, scale = 0.9)
 ggsave(
   paste0("./figures/ihs_age_", band, ".png"),
+  width = 1920,
+  height = 1080,
+  dpi = 150,
+  units = "px",
+  bg = "white"
+)
+ggsave(
+  paste0("./figures/ihs_age_", band, ".pdf"),
   width = 1920,
   height = 1080,
   dpi = 150,
