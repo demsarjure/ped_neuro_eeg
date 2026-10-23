@@ -1,95 +1,96 @@
 """
-Connectomes calculation script.
+Connectomes calculation script: debiased weighted phase lag index (dbWPLI)
+between all pairs of the 19 scalp channels, estimated from the 100 kept 1-s
+epochs of each recording with multitaper spectra (+/- 1 Hz smoothing).
 """
 
 import os
+import shutil
 from concurrent.futures import ProcessPoolExecutor
 
 import numpy as np
+import pandas as pd
 import mne
 from mne_connectivity import spectral_connectivity_epochs
-from functools import partial
+
+from config import (
+    DERIV_ROOT,
+    DATA_DIR,
+    CONNECTOME_DIR,
+    SCALP_CHANNELS,
+    BANDS,
+    MT_BANDWIDTH,
+)
+
+mne.set_log_level("ERROR")
 
 
-# paths
-BIDS_ROOT = "/mnt/d/work/ped_neuro_eeg_data/bids"
-DATA_ROOT = "/mnt/d/work/ped_neuro_eeg_data"
-CONNECTOME_DIR = os.path.join(".", "data", "connectomes")
-GROUPS = ["test", "control"]
+def connectome(epochs: mne.Epochs, fmin: float, fmax: float) -> np.ndarray:
+    """
+    Band-averaged dbWPLI connectome.
 
-
-# frequencies - extended alpha band
-BANDS = {
-    "theta": [3, 7],
-    "alpha": [8, 13],
-}
-
-# create output directory
-os.makedirs(os.path.join(CONNECTOME_DIR, "control", "theta"), exist_ok=True)
-os.makedirs(os.path.join(CONNECTOME_DIR, "control", "alpha"), exist_ok=True)
-os.makedirs(os.path.join(CONNECTOME_DIR, "test", "theta"), exist_ok=True)
-os.makedirs(os.path.join(CONNECTOME_DIR, "test", "alpha"), exist_ok=True)
-
-# get subjects
-subjects = [subject for subject in os.listdir(BIDS_ROOT) if subject.startswith("sub-")]
-
-
-def process_subject(subject, band):
-    sub_id = subject.split("-")[1]
-    group = "control"
-    if sub_id.startswith("T"):
-        group = "test"
-
-    # get frequencies
-    low_freq, high_freq = BANDS[band]
-
-    # get the cleaned eeg file
-    eeg_file = os.path.join(
-        BIDS_ROOT,
-        subject,
-        "eeg",
-        f"{subject}_task-rest_cleaned_eeg.fif",
-    )
-    basename = os.path.basename(eeg_file)
-
-    if not os.path.exists(eeg_file):
-        print(f"---> File {basename} does not exist, skipping subject {sub_id}.")
-        return
-
-    # load
-    raw = mne.io.read_raw_fif(eeg_file)
-
-    # epoch
-    epochs = mne.make_fixed_length_epochs(raw, duration=1)
-
-    # dPLI
+    Args:
+        epochs (mne.Epochs): Kept epochs.
+        fmin (float): Lower band edge in Hz.
+        fmax (float): Upper band edge in Hz.
+    """
     result = spectral_connectivity_epochs(
         epochs,
         method="wpli2_debiased",
         mode="multitaper",
-        fmin=low_freq,
-        fmax=high_freq,
+        mt_bandwidth=MT_BANDWIDTH,
+        fmin=fmin,
+        fmax=fmax,
         faverage=True,
         n_jobs=1,
+        verbose=False,
     )
+    con = result.get_data(output="dense")[:, :, 0]
 
-    # convert to a 2D connectome matrix
-    n_channels = len(result.names)
-    con_vals = result.get_data().reshape(n_channels, n_channels)
-    conn_matrix = con_vals + con_vals.T
-
-    # store as csv
-    output_filename = f"{sub_id}_{band}_task-rest_connectome_eeg.csv"
-    output_path = os.path.join(CONNECTOME_DIR, group, band, output_filename)
-    np.savetxt(output_path, conn_matrix, delimiter=",")
-
-    print(f"---> Connectome saved as {output_filename}")
+    return con + con.T
 
 
-with ProcessPoolExecutor() as executor:
-    for band_name in BANDS.keys():
-        partial_subject_processor = partial(process_subject, band=band_name)
-        list(executor.map(partial_subject_processor, subjects))
+def process_subject(row: dict):
+    """
+    Compute and store all connectomes of one recording.
 
-print()
-print(f"---> All connectomes have been generated!")
+    Args:
+        row (dict): Subject id, group and individual band edges.
+    """
+    sub_id = row["id"]
+    epochs = mne.read_epochs(
+        os.path.join(
+            DERIV_ROOT, f"sub-{sub_id}", "eeg", f"sub-{sub_id}_task-rest_desc-clean_epo.fif"
+        )
+    )
+    epochs.reorder_channels(SCALP_CHANNELS)
+
+    bands = dict(BANDS)
+    bands["iaf"] = (row["iaf_low"], row["iaf_high"])
+
+    for band, (fmin, fmax) in bands.items():
+        conn_matrix = connectome(epochs, fmin, fmax)
+        output_path = os.path.join(
+            CONNECTOME_DIR, row["group"], band, f"{sub_id}_{band}_task-rest_connectome_eeg.csv"
+        )
+        np.savetxt(output_path, conn_matrix, delimiter=",")
+
+    print(f"---> Connectomes saved for {sub_id}")
+
+
+if __name__ == "__main__":
+    pdr = pd.read_csv(os.path.join(DATA_DIR, "pdr.csv"))
+
+    # start from an empty directory so that no stale connectomes remain
+    if os.path.exists(CONNECTOME_DIR):
+        shutil.rmtree(CONNECTOME_DIR)
+    for group in ["test", "control"]:
+        for band in list(BANDS) + ["iaf"]:
+            os.makedirs(os.path.join(CONNECTOME_DIR, group, band), exist_ok=True)
+
+    rows = pdr[["id", "group", "iaf_low", "iaf_high"]].to_dict("records")
+    with ProcessPoolExecutor(max_workers=16) as executor:
+        list(executor.map(process_subject, rows))
+
+    print()
+    print("---> All connectomes have been generated!")

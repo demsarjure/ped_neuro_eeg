@@ -6,181 +6,140 @@ import os
 from glob import glob
 
 import bct
-import pandas as pd
 import numpy as np
+import pandas as pd
 
-# config
-CONNECTOME_DIR = os.path.join(".", "data", "connectomes")
-
-# electrode groups
-ELECTRODES = [
-    "Fp1",
-    "Fp2",
-    "F3",
-    "F4",
-    "C3",
-    "C4",
-    "P3",
-    "P4",
-    "O1",
-    "O2",
-    "F7",
-    "F8",
-    "T3",
-    "T4",
-    "T5",
-    "T6",
-    "Fz",
-    "Cz",
-    "Pz",
-]
-LEFT_ELECTRODES = ["Fp1", "F7", "F3", "T3", "C3", "T5", "P3", "O1"]
-RIGHT_ELECTRODES = ["Fp2", "F8", "F4", "T4", "C4", "T6", "P4", "O2"]
-
-# left anterior quadrant
-LAQ_ELECTRODES = ["Fp1", "F3", "F7"]
-# left posterior quadrant
-LPQ_ELECTRODES = ["P3", "O1", "T5"]
-# right anterior quadrant
-RAQ_ELECTRODES = ["Fp2", "F4", "F8"]
-# right posterior quadrant
-RPQ_ELECTRODES = ["P4", "O2", "T6"]
-
-
-def load_connectome(file_path: str) -> np.ndarray:
-    """
-    Load a connectome from a CSV file.
-
-    Args:
-        file_path (str): Path to the CSV file.
-    """
-    try:
-        connectome = pd.read_csv(file_path, header=None)
-        connectome = connectome.values
-        return connectome
-    except Exception as e:
-        print(f"Error loading {file_path}: {e}")
-        return np.ndarray([])
+from config import (
+    DATA_DIR,
+    CONNECTOME_DIR,
+    SCALP_CHANNELS,
+    BANDS,
+    LEFT_CHANNELS,
+    RIGHT_CHANNELS,
+    LAQ_CHANNELS,
+    LPQ_CHANNELS,
+    RAQ_CHANNELS,
+    RPQ_CHANNELS,
+    FRONTAL_CHANNELS,
+)
 
 
 def calculate_average_strength(
-    connectome: np.ndarray, electrode_array_1: list[str], electrode_array_2: list[str]
+    connectome: np.ndarray, channels_1: list[str], channels_2: list[str]
 ) -> float:
     """
-    Calculate the average strength between two sets of electrodes.
+    Average connection strength (ACS) between two sets of channels. Negative
+    dbWPLI values are kept: the debiased estimator is unbiased, so averaging it
+    gives an unbiased estimate of mean connectivity.
 
     Args:
         connectome (np.ndarray): The connectome matrix.
-        electrode_array_1 (list[str]): The first array of electrodes.
-        electrode_array_2 (list[str]): The second array of electrodes.
+        channels_1 (list[str]): The first set of channels.
+        channels_2 (list[str]): The second set of channels.
     """
-    strengths = []
-    for e_1 in electrode_array_1:
-        idx_1 = ELECTRODES.index(e_1)
-        for e_2 in electrode_array_2:
-            idx_2 = ELECTRODES.index(e_2)
-            strengths.append(connectome[idx_1, idx_2])
+    idx_1 = [SCALP_CHANNELS.index(c) for c in channels_1]
+    idx_2 = [SCALP_CHANNELS.index(c) for c in channels_2]
 
-    return float(np.mean(strengths))
+    return float(connectome[np.ix_(idx_1, idx_2)].mean())
 
 
 def calculate_ge(connectome: np.ndarray) -> float:
     """
-    Calculate the global efficiency of a connectome.
+    Global efficiency of the weighted connectome. Negative dbWPLI values (no
+    consistent phase lag) are set to zero, since edge lengths are the inverse
+    of the weights and must be positive.
 
     Args:
         connectome (np.ndarray): The connectome matrix.
     """
-    try:
-        ge = bct.efficiency_wei(connectome)
-        return ge
-    except Exception as e:
-        print(f"Error in calculating global efficiency: {e}")
-        return np.nan
+    w = connectome.copy()
+    w[w < 0] = 0
+    np.fill_diagonal(w, 0)
+
+    return float(bct.efficiency_wei(w))
 
 
-def process_connectomes(group: str, connectome_dir: str) -> pd.DataFrame:
+def calculate_strength_without(
+    connectome: np.ndarray, channels_1: list[str], channels_2: list[str], excluded: set[str]
+) -> float:
     """
-    Process all connectomes and calculate metrics.
+    Average connection strength leaving out pairs that involve an excluded
+    channel (interpolated, S10; or frontal, S11).
 
     Args:
-        group (str): The group to process ("test" or "control").
+        connectome (np.ndarray): The connectome matrix.
+        channels_1 (list[str]): The first set of channels.
+        channels_2 (list[str]): The second set of channels.
+        excluded (set[str]): Channels to leave out.
     """
-    # get all connectomes
-    connectome_files = glob(os.path.join(connectome_dir, "*.csv"))
+    return calculate_average_strength(
+        connectome,
+        [c for c in channels_1 if c not in excluded],
+        [c for c in channels_2 if c not in excluded],
+    )
 
+
+def process_connectomes(group: str, band: str, interpolated: dict) -> pd.DataFrame:
+    """
+    Calculate metrics for all connectomes of a group in a band.
+
+    Args:
+        group (str): The group ("test" or "control").
+        band (str): The frequency band.
+        interpolated (dict): Channels interpolated for the whole recording, by id.
+    """
     results = []
+    files = sorted(glob(os.path.join(CONNECTOME_DIR, group, band, "*.csv")))
+    for file in files:
+        sub_id = os.path.basename(file).split("_")[0]
+        connectome = np.loadtxt(file, delimiter=",")
+        upper = connectome[np.triu_indices(len(SCALP_CHANNELS), k=1)]
 
-    for file in connectome_files:
-        # get subject id from filename
-        filename = os.path.splitext(os.path.basename(file))[0]
-        subject_id = filename.split("_")[0]
-        print(f"    - processing {subject_id}")
+        results.append(
+            {
+                "id": sub_id,
+                "group": group,
+                "lh_rh": calculate_average_strength(connectome, LEFT_CHANNELS, RIGHT_CHANNELS),
+                "lh_rh_noint": calculate_strength_without(
+                    connectome, LEFT_CHANNELS, RIGHT_CHANNELS, interpolated.get(sub_id, set())
+                ),
+                # without the frontal-pole and anterior temporal electrodes (36 pairs)
+                "lh_rh_nofront": calculate_strength_without(
+                    connectome, LEFT_CHANNELS, RIGHT_CHANNELS, set(FRONTAL_CHANNELS)
+                ),
+                "laq_raq": calculate_average_strength(connectome, LAQ_CHANNELS, RAQ_CHANNELS),
+                "lpq_rpq": calculate_average_strength(connectome, LPQ_CHANNELS, RPQ_CHANNELS),
+                "laq_rpq": calculate_average_strength(connectome, LAQ_CHANNELS, RPQ_CHANNELS),
+                "raq_lpq": calculate_average_strength(connectome, RAQ_CHANNELS, LPQ_CHANNELS),
+                "ge": calculate_ge(connectome),
+                "mean_conn": float(upper.mean()),
+                "neg_frac": float((upper < 0).mean()),
+            }
+        )
 
-        # connectome
-        connectome = load_connectome(file)
-
-        # if nan in connectome or only contains 0 and 1, skip
-        if not np.isnan(connectome).any() and np.unique(connectome).size > 2:
-            # metrics
-            lh_rh = calculate_average_strength(
-                connectome, LEFT_ELECTRODES, RIGHT_ELECTRODES
-            )
-            laq_raq = calculate_average_strength(
-                connectome, LAQ_ELECTRODES, RAQ_ELECTRODES
-            )
-            lpq_rpq = calculate_average_strength(
-                connectome, LPQ_ELECTRODES, RPQ_ELECTRODES
-            )
-            laq_rpq = calculate_average_strength(
-                connectome, LAQ_ELECTRODES, RPQ_ELECTRODES
-            )
-            raq_lpq = calculate_average_strength(
-                connectome, RAQ_ELECTRODES, LPQ_ELECTRODES
-            )
-            ge = calculate_ge(connectome)
-
-            # Append results
-            results.append(
-                {
-                    "id": subject_id,
-                    "group": group,
-                    "lh_rh": lh_rh,
-                    "laq_raq": laq_raq,
-                    "lpq_rpq": lpq_rpq,
-                    "laq_rpq": laq_rpq,
-                    "raq_lpq": raq_lpq,
-                    "ge": ge,
-                }
-            )
-
-    # to df
     return pd.DataFrame(results)
 
 
-for band in ["theta", "alpha"]:
-    all_results = []
-    for g in ["test", "control"]:
-        print(f"---> Processing {band} connectomes for group: {g}")
-
-        # calculate metrics
-        cd = os.path.join(CONNECTOME_DIR, g, band)
-        results_df = process_connectomes(g, cd)
-
-        # append
-        all_results.append(results_df)
-
-    # append demographics
-    dem_test = pd.read_csv(os.path.join(".", "data", "demographics_test.csv"))
-    dem_control = pd.read_csv(os.path.join(".", "data", "demographics_control.csv"))
-    demographics = pd.concat([dem_test, dem_control], ignore_index=True)
-
-    # combine and save results
-    all_results = pd.concat(all_results)
-    all_results = all_results.merge(demographics, on="id", how="left")
-    all_results.to_csv(
-        os.path.join(".", "data", f"connectome_metrics_{band}.csv"), index=False
+if __name__ == "__main__":
+    dem = pd.concat(
+        [
+            pd.read_csv(os.path.join(DATA_DIR, "demographics_test.csv")),
+            pd.read_csv(os.path.join(DATA_DIR, "demographics_control.csv")),
+        ],
+        ignore_index=True,
     )
 
-    print()
-    print("---> All results saved to connectome_metrics.csv")
+    # channels interpolated for the whole recording (not independent measurements)
+    qc = pd.read_csv(os.path.join(DATA_DIR, "qc_summary.csv"))
+    interpolated = {
+        row["id"]: set(str(row["bad_channels"]).split(";"))
+        for _, row in qc.iterrows()
+        if isinstance(row["bad_channels"], str) and row["bad_channels"]
+    }
+
+    for band in list(BANDS) + ["iaf"]:
+        df = pd.concat([process_connectomes(g, band, interpolated) for g in ["test", "control"]])
+        df = df.merge(dem, on="id", how="left")
+        df.to_csv(os.path.join(DATA_DIR, f"connectome_metrics_{band}.csv"), index=False)
+
+        print(f"---> {band}: metrics for {len(df)} recordings")
