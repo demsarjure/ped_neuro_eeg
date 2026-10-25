@@ -2,6 +2,8 @@
 
 Status: **FROZEN** on 23 October 2026, after the QC review and before any group comparison with the revised pipeline. The freeze is the git commit that adds this line; the SHA-256 hashes of the code, this plan and the derived data at that point are in freeze_manifest.sha256 (and those of the cleaned epochs, which are not public, in freeze_manifest_epochs.sha256).
 
+Amended once, on 24 October 2026, after the group comparison: the sample was restricted to children aged 2–9 years (see the last section).
+
 The plan was written during the re-analysis, after the results of the original analysis were known, and frozen before any group comparison with the revised pipeline.
 
 Every rule below is applied in the same way to every recording; nothing is set by hand for a single recording.
@@ -125,3 +127,33 @@ Prior sensitivity: Model 1 with μ ~ N(0, 0.5) and N(0, 2).
 - Checked on every sampled parameter (not transformed parameters or generated quantities): R-hat < 1.01; bulk and tail ESS > 400; no divergent transitions; E-BFMI ≥ 0.3 in every chain; no transition at the maximum tree depth.
 - A fit that fails a check is refitted once with adapt_delta 0.99 and max_treedepth 12. If it still fails, it is kept and reported with the failed checks stated.
 - P is reported as ">99.9%" (or "<0.1%") when fewer than 10 of the 10,000 draws fall on the other side of 0.
+
+## Amendment of 24 October 2026 (after the group comparison)
+
+The sample was restricted to children aged 2–9 years in completed years (`AGE_RANGE` in config.py), the age range of the primary and key secondary analyses, so that all analyses use the same children. The recordings outside this range were removed from the derived data: 4 of children with CTNNB1 syndrome (including the excluded T029) and 11 of controls (3 under 2 years, 6 aged 10–19 years and 2 adults). As a result:
+
+- the PDR age norms are estimated from the 54 controls aged 2–9 years with a clear PDR. This changed no individual band and the background-slowing flag of one control (C065), so S3 has 38 instead of 37 controls (μ −0.62 instead of −0.61; the primary result is still robust);
+- S5 (all children up to 19 years) was dropped;
+- the primary analysis, Model 2, the matched-set check and all other sensitivity analyses use the same children as before, and their results are unchanged.
+
+The freeze manifests describe the state at the freeze, before this amendment.
+
+## Post hoc analyses (25 October 2026, not part of the plan)
+
+Added after the group comparison, in response to reviewer-style questions; reported as post hoc (analysis_posthoc.R):
+
+- **Within the hemispheres:** Model 1 for intrahemispheric strength (the mean dbWPLI over the 56 pairs within each hemisphere of the 16 IHS electrodes; column `intra` of the metrics) and for the within-child contrast IHS − intrahemispheric strength.
+- **Comparable alpha power:** both groups restricted to the range of aperiodic-adjusted posterior alpha power observed in both groups, then Model 1 with the child-minus-control alpha-power difference as a covariate (as in S8b, but without extrapolation).
+- **Open eyes:** blinks located around the analysed epochs with the blink-rate detector before ICA (blinks_posthoc.py; data/blinks_analysed.csv); Model 1 in the children with a blink within 15 s of at least 90% of their analysed epochs.
+- **Added noise:** independent 1/f noise added to the analysed epochs of each matched control child until its alpha power matched the mean of the CTNNB1 children of its stratum (bisection; noise_posthoc.py; data/noise_injection.csv); alpha connectome recomputed; Model 1.
+- **Age in the individual band:** Model 2 refitted to IHS in the individual band.
+- **Open eyes, checks:** thresholds of 50% and 75%, and a ±5-s window with a 50% threshold.
+- **Alpha power as an outcome:** Model 1 for the aperiodic-adjusted posterior alpha power.
+- **Influence and placement:** the primary refitted without each matched control child and without each stratum in turn, and without the two controls furthest above their stratum mean together; each CTNNB1 child's percentile among its matched controls (ties count half); a probabilistic index with a Bayesian-bootstrap interval; a table of the strata (results/strata.csv).
+- **Sleep spindles:** the primary without the control children with a spindle rate of at least 0.5/min.
+- **Age model checks:** Model 2 without each control child in turn, and in the individual band in children with a clear rhythm only.
+- **Alpha-power measure:** alpha power with the aperiodic fit over 1.5–20 Hz and as absolute power (spectra_posthoc.py; data/spectral_checks.csv).
+- **Epochs matched for alpha power:** IHS from the 50 analysed epochs with the least (controls) or most (CTNNB1 children) posterior alpha power, Model 1 (epochs_posthoc.py; data/epochs_alpha_matched.csv).
+- **Reliability and chance level:** split-half (odd/even epochs) reliability of IHS and posterior alpha power, Spearman–Brown corrected; chance level of IHS from 200 shuffles of the right-hemisphere epochs (reliability_posthoc.py; data/ihs_reliability.csv).
+- **Frequency by frequency:** dbWPLI in 1-Hz bins (2–30 Hz) and posterior power, group means (data/ihs_by_frequency.csv; Supp Fig 4).
+

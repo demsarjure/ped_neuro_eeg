@@ -2,6 +2,7 @@
 Shared configuration for the EEG pipeline.
 """
 
+import csv
 import os
 
 # paths ------------------------------------------------------------------------
@@ -16,6 +17,25 @@ DATA_DIR = os.path.join(REPO_ROOT, "data")
 CONNECTOME_DIR = os.path.join(DATA_DIR, "connectomes")
 QC_DIR = os.path.join(REPO_ROOT, "qc")
 RESULTS_DIR = os.path.join(REPO_ROOT, "results")
+
+# study sample -----------------------------------------------------------------
+# children aged 2-9 years in completed years, the age range of the main and key
+# secondary analyses; recordings outside it are not analysed (amendment of
+# 24 October 2026, see analysis_spec.md)
+AGE_RANGE = (2, 9)
+
+
+def study_ids() -> set[str]:
+    """
+    IDs of the participants in the study age range (data/demographics_*.csv).
+    """
+    ids = set()
+    for group in RAW_GROUPS:
+        with open(os.path.join(DATA_DIR, f"demographics_{group}.csv"), encoding="utf-8-sig") as f:
+            for row in csv.DictReader(f):
+                if AGE_RANGE[0] <= int(row["age"]) <= AGE_RANGE[1]:
+                    ids.add(row["id"])
+    return ids
 
 # reproducibility ---------------------------------------------------------------
 SEED = 42

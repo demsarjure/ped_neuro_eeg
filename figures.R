@@ -64,7 +64,6 @@ alpha <- read_csv("./data/connectome_metrics_alpha.csv", show_col_types = FALSE)
 qc <- read_csv("./data/qc_summary.csv", show_col_types = FALSE)
 pdr <- read_csv("./data/pdr.csv", show_col_types = FALSE)
 norms <- fromJSON("./data/pdr_norms.json")
-recruitment <- fromJSON("./data/recruitment.json")
 
 # Figure 3: interhemispheric connectivity in the Model 1 matched sample -----------------
 # B: mean of the matched CTNNB1 children's matrices; A: mean over the same children
@@ -157,16 +156,25 @@ fig4a <- ggplot(primary_d, aes(x = age, y = raw)) +
 robustness <- bind_rows(
   model1 %>% filter(analysis %in% c("primary", "S1 individual band", "S6 theta")),
   sensitivity,
-  matched_set %>% transmute(analysis, mu = mean, mu_lower = lower, mu_upper = upper)
+  matched_set %>% transmute(
+    analysis, mu = mean, mu_lower = lower, mu_upper = upper, n_test = primary$n_test, n_control = primary$n_control
+  ),
+  # post hoc checks of the competing explanations (analysis_posthoc.R)
+  read_csv("./results/posthoc.csv", show_col_types = FALSE) %>%
+    filter(analysis %in% c(
+      "post hoc: overlapping alpha power, adjusted", "post hoc: control alpha power degraded with noise",
+      "post hoc: blinks near the analysed epochs", "post hoc: epochs matched for alpha power"
+    )) %>%
+    select(analysis, mu, mu_lower, mu_upper, n_test, n_control)
 ) %>%
   mutate(
     label = recode(
       analysis,
       "primary" = "Primary (8-13 Hz)",
-      "S1 individual band" = "Individual band (PDR ± 2 Hz)",
-      "S2 age 0-4" = "Age 0-4 years",
+      "S1 individual band" = "Individual band (peak ± 2 Hz)",
+      "S2 age 0-4" = "Age 2-4 years",
       "S2 age 5+" = "Age 5-9 years",
-      "S3 without slowing" = "Without background slowing",
+      "S3 without slowing" = "Without weak or slow alpha peak",
       "S4 without sleep" = "Without signs of sleep",
       "S8a data quality" = "Adjusted for data quality",
       "S8b data quality and alpha power" = "Adjusted for quality and alpha power",
@@ -176,9 +184,18 @@ robustness <- bind_rows(
       "prior mu ~ N(0, 0.5)" = "Prior N(0, 0.5)",
       "prior mu ~ N(0, 2)" = "Prior N(0, 2)",
       "S6 theta" = "Theta (4-7 Hz)",
-      "check: matched-set model" = "Matched-set model"
+      "check: matched-set model" = "Matched-set model",
+      "post hoc: overlapping alpha power, adjusted" = "Comparable alpha power, adjusted †",
+      "post hoc: control alpha power degraded with noise" = "Noise added to control recordings †",
+      "post hoc: blinks near the analysed epochs" = "Blinks near most epochs †",
+      "post hoc: epochs matched for alpha power" = "Epochs matched for alpha power †"
     ),
-    label = if_else(is.na(n_test), label, paste0(label, " (n = ", n_test, ")")),
+    label = if_else(is.na(n_test), label, paste0(label, " (n = ", n_test, "/", n_control, ")")),
+    # the checks that defined robustness
+    label = if_else(analysis %in% c(
+      "S1 individual band", "S2 age 0-4", "S2 age 5+", "S3 without slowing", "S4 without sleep",
+      "S11 without frontal electrodes"
+    ), paste0(label, " *"), label),
     label = fct_rev(fct_inorder(label))
   )
 
@@ -223,11 +240,12 @@ n_matched_c <- primary$n_control
 
 excluded_text <- function(g) {
   ex <- qc %>% filter(excluded, group == g)
-  if (nrow(ex) == 0) return("Excluded: 0")
+  if (nrow(ex) == 0) return("Excluded (n = 0)")
   reasons <- ex %>%
-    mutate(reason = if_else(str_detect(exclusion_reason, "channels"), "unconnected or unusable electrodes", "too few epochs free of large artefacts")) %>%
+    mutate(reason = if_else(str_detect(exclusion_reason, "channels"), "more than three\nnon-working electrodes", "too few epochs free\nof large artefacts")) %>%
     count(reason)
-  paste0("Excluded: ", nrow(ex), "\n", paste0(reasons$n, " ", reasons$reason, collapse = "\n"))
+  counts <- if (nrow(reasons) > 1) paste0(" (n = ", reasons$n, ")") else ""
+  paste0("Excluded (n = ", nrow(ex), "):\n", paste0(reasons$reason, counts, collapse = "\n"))
 }
 
 get_n <- function(df, g) {
@@ -237,20 +255,18 @@ get_n <- function(df, g) {
 
 boxes <- tribble(
   ~x, ~y, ~label,
-  1, 6, paste0("CTNNB1: evaluated in the\nDragonfly study (n = ", recruitment$evaluated, ")"),
-  1, 5, paste0("EEG attempted (n = ", recruitment$eeg_attempted, ")"),
-  1, 4, paste0("Recordings obtained (n = ", get_n(n_rec, "test"), ")"),
+  1, 4, paste0("CTNNB1 syndrome: recordings\nat 2-9 years (n = ", get_n(n_rec, "test"), ")"),
   1, 2.9, excluded_text("test"),
   1, 1.8, paste0("Analysable (n = ", get_n(n_an, "test"), ")"),
   1, 0.8, paste0("Matched by sex and age\n(n = ", n_matched, ")"),
-  3, 4, paste0("Controls: normal clinical EEGs\n(n = ", get_n(n_rec, "control"), ")"),
+  3, 4, paste0("Controls: normal clinical EEGs\nat 2-9 years (n = ", get_n(n_rec, "control"), ")"),
   3, 2.9, excluded_text("control"),
   3, 1.8, paste0("Analysable (n = ", get_n(n_an, "control"), ")"),
   3, 0.8, paste0("Matched controls\n(n = ", n_matched_c, ")")
 )
 arrows <- tribble(
   ~x, ~y, ~yend,
-  1, 5.75, 5.25, 1, 4.75, 4.25, 1, 3.75, 3.3, 1, 2.5, 2.05, 1, 1.55, 1.1,
+  1, 3.75, 3.3, 1, 2.5, 2.05, 1, 1.55, 1.1,
   3, 3.75, 3.3, 3, 2.5, 2.05, 3, 1.55, 1.1
 )
 
@@ -264,13 +280,13 @@ fig6 <- ggplot() +
     label.size = 0.3, label.padding = unit(0.15, "in"), fill = "white", lineheight = 0.95
   ) +
   xlim(0, 4) +
-  ylim(0.3, 6.5) +
+  ylim(0.3, 4.5) +
   theme_void() +
   theme(plot.background = element_rect(fill = "white", color = NA))
-save_figure(fig6, "figure6_flow", width = 6, height = 5)
+save_figure(fig6, "figure6_flow", width = 6, height = 3.6)
 
 # Supplementary figure: PDR and age ---------------------------------------------------------------
-age_grid <- tibble(age = seq(0, max(pdr$age), by = 0.1)) %>%
+age_grid <- tibble(age = seq(min(pdr$age), max(pdr$age), by = 0.1)) %>%
   mutate(mean = norms$pdr$params$const + norms$pdr$params$age * log(age + 1))
 
 figS1 <- ggplot(pdr %>% filter(pdr_clear), aes(x = age, y = pdr_hz)) +
@@ -283,3 +299,48 @@ figS1 <- ggplot(pdr %>% filter(pdr_clear), aes(x = age, y = pdr_hz)) +
   theme_paper() +
   theme(legend.position = "top")
 save_figure(figS1, "figureS1_pdr", width = 5, height = 3.5)
+
+# Supplementary figure: interhemispheric strength and alpha power (post hoc) --------------------
+# shaded: the range of posterior alpha power observed in both groups (analysis_posthoc.R)
+posthoc <- read_csv("./results/posthoc.csv", show_col_types = FALSE)
+alpha_range <- posthoc %>% filter(analysis == "post hoc: overlapping alpha power, adjusted")
+alpha_power <- alpha %>% left_join(pdr %>% select(id, alpha_adj_db), by = "id")
+
+figS3 <- ggplot(alpha_power, aes(x = alpha_adj_db, y = lh_rh)) +
+  annotate(
+    "rect", xmin = alpha_range$alpha_low, xmax = alpha_range$alpha_high, ymin = -Inf, ymax = Inf,
+    fill = MUTED, alpha = 0.12
+  ) +
+  geom_point(aes(color = group, shape = group), size = 1.8, alpha = 0.8) +
+  scale_color_manual(values = COLORS, labels = LABELS) +
+  scale_shape_manual(values = SHAPES, labels = LABELS) +
+  labs(x = "Posterior alpha power (dB above the aperiodic component)", y = "Interhemispheric strength (dbWPLI)") +
+  theme_paper() +
+  theme(legend.position = "top")
+save_figure(figS3, "figureS3_alpha", width = 5, height = 3.5)
+
+# Supplementary figure: posterior power and IHS frequency by frequency (post hoc) ---------------
+# group means with 95% intervals (mean +/- 1.96 SE) over all analysable children
+by_freq <- read_csv("./data/ihs_by_frequency.csv", show_col_types = FALSE) %>%
+  pivot_longer(c(power_db, ihs), names_to = "measure", values_to = "value") %>%
+  group_by(group, freq, measure) %>%
+  summarise(mean = mean(value), se = sd(value) / sqrt(n()), .groups = "drop") %>%
+  mutate(lower = mean - 1.96 * se, upper = mean + 1.96 * se)
+
+freq_panel <- function(m, title, ylab) {
+  ggplot(by_freq %>% filter(measure == m), aes(x = freq, y = mean, color = group, fill = group)) +
+    annotate("rect", xmin = 8, xmax = 13, ymin = -Inf, ymax = Inf, fill = MUTED, alpha = 0.08) +
+    geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.15, color = NA) +
+    geom_line(linewidth = 0.7) +
+    scale_color_manual(values = COLORS, labels = LABELS) +
+    scale_fill_manual(values = COLORS, labels = LABELS) +
+    labs(title = title, x = "Frequency (Hz)", y = ylab) +
+    theme_paper() +
+    theme(legend.position = "top")
+}
+figS4 <- plot_grid(
+  freq_panel("power_db", "A", "Posterior power (dB)"),
+  freq_panel("ihs", "B", "Interhemispheric strength (dbWPLI)"),
+  nrow = 1
+)
+save_figure(figS4, "figureS4_frequency", width = 7.5, height = 3.2)

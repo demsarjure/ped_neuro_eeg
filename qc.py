@@ -19,7 +19,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from scipy.signal import welch
 
-from config import DERIV_ROOT, DATA_DIR, QC_DIR, SFREQ, EPOCH_DURATION, POSTERIOR_CHANNELS
+from config import DERIV_ROOT, DATA_DIR, QC_DIR, SFREQ, EPOCH_DURATION, POSTERIOR_CHANNELS, AGE_RANGE
 
 mne.set_log_level("ERROR")
 
@@ -77,6 +77,8 @@ def load_summary() -> pd.DataFrame:
         ignore_index=True,
     )
     df = df.merge(dem, on="id", how="left")
+    # only participants in the study age range
+    df = df[df["age"].between(*AGE_RANGE)].reset_index(drop=True)
     resp = pd.read_csv(os.path.join(DATA_DIR, "respiration.csv"))
     df = df.merge(resp[["id", "resp_usable"]], on="id", how="left")
     df["excluded"] = df["excluded"].astype(bool)

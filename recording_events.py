@@ -22,7 +22,7 @@ import numpy as np
 import pandas as pd
 from scipy.signal import butter, sosfiltfilt, welch
 
-from config import DATA_ROOT, DATA_DIR, RAW_GROUPS, SFREQ
+from config import DATA_ROOT, DATA_DIR, RAW_GROUPS, SFREQ, study_ids
 
 # the photic channel is exported in 4-s blocks; in every block with flashes,
 # the first k samples are ON (k = number of flashes in the block)
@@ -181,6 +181,10 @@ if __name__ == "__main__":
     print(f"---> Parsing {len(files)} raw exports")
     with ProcessPoolExecutor(max_workers=16) as executor:
         results = list(executor.map(parse_export, files))
+
+    # only participants in the study age range
+    keep = study_ids()
+    results = [r for r in results if r["respiration"]["id"] in keep]
 
     df = pd.DataFrame([row for r in results for row in r["rows"]])
     df = df.sort_values(["id", "onset_sample", "event"]).reset_index(drop=True)
