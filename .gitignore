@@ -181,3 +181,5 @@ temp/
 qc/
 # internal archive of old-pipeline numbers
 archive/
+# manuscript
+manuscript/
