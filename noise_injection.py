@@ -1,6 +1,6 @@
 """
-Post hoc test of the signal-to-noise explanation, not part of the analysis plan
-(25 October 2026).
+Additional test of the signal-to-noise explanation (analysis_spec.md,
+Additional analyses).
 
 dbWPLI is lower when the signal-to-noise ratio is lower, even if the coupling is
 unchanged, and children with CTNNB1 syndrome had lower alpha power. Independent

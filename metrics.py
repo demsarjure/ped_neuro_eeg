@@ -46,8 +46,8 @@ def calculate_average_strength(
 def calculate_within_strength(connectome: np.ndarray, channel_sets: list[list[str]]) -> float:
     """
     Average connection strength over the pairs within each set of channels
-    (each pair counted once), pooled over the sets. Used post hoc for the
-    connectivity within the hemispheres.
+    (each pair counted once), pooled over the sets. Used in the additional
+    analysis of connectivity within the hemispheres.
 
     Args:
         connectome (np.ndarray): The connectome matrix.
@@ -129,7 +129,7 @@ def process_connectomes(group: str, band: str, interpolated: dict) -> pd.DataFra
                 "lpq_rpq": calculate_average_strength(connectome, LPQ_CHANNELS, RPQ_CHANNELS),
                 "laq_rpq": calculate_average_strength(connectome, LAQ_CHANNELS, RPQ_CHANNELS),
                 "raq_lpq": calculate_average_strength(connectome, RAQ_CHANNELS, LPQ_CHANNELS),
-                # post hoc: within the hemispheres, the same 16 electrodes (56 pairs)
+                # additional analysis: within the hemispheres, the same 16 electrodes (56 pairs)
                 "intra": calculate_within_strength(connectome, [LEFT_CHANNELS, RIGHT_CHANNELS]),
                 "ge": calculate_ge(connectome),
                 "mean_conn": float(upper.mean()),

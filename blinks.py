@@ -1,5 +1,5 @@
 """
-Post hoc check of eye state, not part of the analysis plan (25 October 2026).
+Additional check of eye state (analysis_spec.md, Additional analyses).
 
 Eye opening and closing were not annotated in the exports. Blinks show that the
 eyes were open, so blinks were located around the analysed epochs with the

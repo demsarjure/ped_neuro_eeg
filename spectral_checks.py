@@ -1,6 +1,6 @@
 """
-Post hoc checks of the alpha-power measure, not part of the analysis plan
-(25 October 2026). Higher 20-40 Hz power (muscle activity) could flatten the
+Additional checks of the alpha-power measure (analysis_spec.md, Additional
+analyses). Higher 20-40 Hz power (muscle activity) could flatten the
 aperiodic fit over 1.5-35 Hz (pdr.py) and so lower the aperiodic-adjusted alpha
 power. Alpha power is therefore also computed with the aperiodic component fitted
 over 1.5-20 Hz, and as absolute power, at the posterior electrodes.

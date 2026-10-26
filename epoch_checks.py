@@ -1,6 +1,6 @@
 """
-Post hoc checks on the analysed epochs, not part of the analysis plan
-(25 October 2026).
+Additional checks on the analysed epochs (analysis_spec.md, Additional
+analyses).
 
 1. Epochs matched for alpha power. In each child, the 50 of the 100 analysed
    epochs with the lowest posterior alpha power (control children) or the highest

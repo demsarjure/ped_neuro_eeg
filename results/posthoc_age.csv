@@ -1,9 +1,0 @@
-analysis,band,metric,n_test,n_control,y_sd,problems,refit,parameter,mean,lower,upper,p_below,p_below_mcse,n_above,n_below
-post hoc: key secondary in the individual band,iaf,lh_rh,26,61,0.021364058959803645,,FALSE,group (age 5),-0.3294213613618,-0.596241225,-0.08040030500000005,0.9954,7.16607863763177e-4,46,9954
-post hoc: key secondary in the individual band,iaf,lh_rh,26,61,0.021364058959803645,,FALSE,slope control (per year),0.17809607628472293,0.08908367848184036,0.2726575808526869,1e-4,9.997999399879958e-5,9999,1
-post hoc: key secondary in the individual band,iaf,lh_rh,26,61,0.021364058959803645,,FALSE,slope test (per year),-0.016516074035351425,-0.10035157838662744,0.07204807411620195,0.6642,0.0048417014584681145,3358,6642
-post hoc: key secondary in the individual band,iaf,lh_rh,26,61,0.021364058959803645,,FALSE,group x age (per year),-0.19461215032007437,-0.31628868286352513,-0.0711928517276768,0.9985,4.1149563773010294e-4,15,9985
-"post hoc: key secondary in the individual band, clear rhythm only",iaf,lh_rh,15,54,0.021940654845118993,,FALSE,group (age 5),-0.4187804085181,-0.7728229750000001,-0.07141805750000033,0.9897,0.0011404380911319548,103,9897
-"post hoc: key secondary in the individual band, clear rhythm only",iaf,lh_rh,15,54,0.021940654845118993,,FALSE,slope control (per year),0.19855151625339573,0.08438780448190902,0.31930845856785633,4e-4,2.448305352682547e-4,9996,4
-"post hoc: key secondary in the individual band, clear rhythm only",iaf,lh_rh,15,54,0.021940654845118993,,FALSE,slope test (per year),-0.00286415018016405,-0.1746422933164631,0.17405207611328313,0.5145,0.005621320163282745,4855,5145
-"post hoc: key secondary in the individual band, clear rhythm only",iaf,lh_rh,15,54,0.021940654845118993,,FALSE,group x age (per year),-0.2014156664335598,-0.4072208483188135,0.003972631054374768,0.9728,0.0020391667780236774,272,9728

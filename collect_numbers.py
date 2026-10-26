@@ -124,36 +124,34 @@ MODEL2_PARAMETERS = {
 }
 
 # supplementary items, numbered in order of first citation in the manuscript
-# (main text first, then the supplement; manuscript/v3/render.py checks it)
+# (main text first, then the supplement)
 SUPPLEMENT = {
     "table_qc_group": "1",
-    "table_deviations": "2",
-    "table_miljevic": "3",
-    "table_strata": "4",
-    "table_sensitivity": "5",
-    "table_model2": "6",
+    "table_miljevic": "2",
+    "table_strata": "3",
+    "table_sensitivity": "4",
+    "table_model2": "5",
+    "table_additional": "6",
     "fig_flow": "1",
     "fig_pdr": "2",
     "fig_alpha": "3",
     "fig_freq": "4",
-    "table_posthoc": "7",
 }
 
-# post hoc analyses (results/posthoc.csv, not part of the analysis plan) and their
-# key prefixes
-POSTHOC_PREFIXES = {
-    "post hoc: within the hemispheres": "ph_intra",
-    "post hoc: between minus within the hemispheres": "ph_contrast",
-    "post hoc: overlapping alpha power, adjusted": "ph_overlap",
-    "post hoc: blinks near the analysed epochs": "ph_blinks",
-    "post hoc: control alpha power degraded with noise": "ph_noise",
-    "post hoc: blinks check (epochs_near_blink >= 0.5)": "ph_blinks50",
-    "post hoc: blinks check (epochs_near_blink >= 0.75)": "ph_blinks75",
-    "post hoc: blinks check (epochs_near_blink_5s >= 0.5)": "ph_blinks5s",
-    "post hoc: posterior alpha power": "ph_alpha",
-    "post hoc: without the two highest control children": "ph_top2",
-    "post hoc: without spindles": "ph_nospindle",
-    "post hoc: epochs matched for alpha power": "ph_epochs",
+# additional analyses (results/additional.csv) and their key prefixes
+ADDITIONAL_PREFIXES = {
+    "additional: within the hemispheres": "add_intra",
+    "additional: between minus within the hemispheres": "add_contrast",
+    "additional: overlapping alpha power, adjusted": "add_overlap",
+    "additional: blinks near the analysed epochs": "add_blinks",
+    "additional: control alpha power degraded with noise": "add_noise",
+    "additional: blinks check (epochs_near_blink >= 0.5)": "add_blinks50",
+    "additional: blinks check (epochs_near_blink >= 0.75)": "add_blinks75",
+    "additional: blinks check (epochs_near_blink_5s >= 0.5)": "add_blinks5s",
+    "additional: posterior alpha power": "add_alpha",
+    "additional: without the two highest control children": "add_top2",
+    "additional: without spindles": "add_nospindle",
+    "additional: epochs matched for alpha power": "add_epochs",
 }
 
 # Model 1 outcomes of Fig. 2 (interhemispheric strength and the quadrant pairs)
@@ -512,9 +510,9 @@ def fig2_numbers(results_dir: str) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def posthoc_numbers(results_dir: str, pdr: pd.DataFrame) -> dict:
+def additional_numbers(results_dir: str, pdr: pd.DataFrame) -> dict:
     """
-    Post hoc analyses, not part of the analysis plan (analysis_posthoc.R):
+    Additional analyses (analysis_additional.R):
     connectivity within the hemispheres, the contrast between and within the
     hemispheres, and the comparison at overlapping alpha power; also the alpha
     power of the children without an atypical posterior rhythm.
@@ -524,56 +522,56 @@ def posthoc_numbers(results_dir: str, pdr: pd.DataFrame) -> dict:
         pdr (pd.DataFrame): PDR table of the analysable children.
     """
     n = {}
-    path = os.path.join(results_dir, "posthoc.csv")
+    path = os.path.join(results_dir, "additional.csv")
     if not os.path.exists(path):
         return n
 
-    posthoc = pd.read_csv(path)
-    for _, row in posthoc.iterrows():
-        prefix = POSTHOC_PREFIXES[row["analysis"]]
+    additional = pd.read_csv(path)
+    for _, row in additional.iterrows():
+        prefix = ADDITIONAL_PREFIXES[row["analysis"]]
         n.update(posterior(f"{prefix}_mu", row, "mu", "mu_lower", "mu_upper"))
         # dbWPLI to 3 decimals; alpha power in dB to 1
-        digits = 1 if prefix == "ph_alpha" else 3
+        digits = 1 if prefix == "add_alpha" else 3
         n[f"{prefix}_raw"] = fmt(row["raw"], digits)
         n[f"{prefix}_raw_lower"] = fmt(row["raw_lower"], digits)
         n[f"{prefix}_raw_upper"] = fmt(row["raw_upper"], digits)
         n[f"{prefix}_n_test"] = int(row["n_test"])
         n[f"{prefix}_n_control"] = int(row["n_control"])
 
-    overlap = posthoc[posthoc["analysis"] == "post hoc: overlapping alpha power, adjusted"].iloc[0]
+    overlap = additional[additional["analysis"] == "additional: overlapping alpha power, adjusted"].iloc[0]
     n["alpha_overlap_low"] = fmt(overlap["alpha_low"], 1)
     n["alpha_overlap_high"] = fmt(overlap["alpha_high"], 1)
     for g in ["test", "control"]:
         p = pdr[(pdr["group"] == g) & ~pdr["slowing_flag"].astype(bool)]
         n[f"alpha_power_median_typical_{g}"] = fmt(p["alpha_adj_db"].median(), 1)
 
-    # blinks around the analysed epochs (blinks_posthoc.py)
+    # blinks around the analysed epochs (blinks.py)
     blinks = pd.read_csv(os.path.join(DATA_DIR, "blinks_analysed.csv"))
     for g in ["test", "control"]:
         b = blinks[blinks["group"] == g]
         n[f"blinks_analysed_median_{g}"] = fmt(b["blinks_per_min"].median(), 1)
         n[f"epochs_near_blink_median_{g}"] = f"{100 * b['epochs_near_blink'].median():.0f}%"
 
-    # noise added to the matched control children (noise_posthoc.py)
+    # noise added to the matched control children (noise_injection.py)
     noise = pd.read_csv(os.path.join(DATA_DIR, "noise_injection.csv"))
     n["noise_n_degraded"] = int((noise["noise_scale"] > 0).sum())
     n["noise_alpha_after_mean"] = fmt(noise["alpha_after_db"].mean(), 1)
     n["noise_alpha_target_mean"] = fmt(noise["alpha_target_db"].mean(), 1)
 
     # the open-eyes check with other thresholds or a stricter window
-    checks = posthoc[posthoc["analysis"].str.startswith("post hoc: blinks")]
-    n["ph_blinks_checks_min"] = fmt(checks["mu"].max())
-    n["ph_blinks_checks_max"] = fmt(checks["mu"].min())
+    checks = additional[additional["analysis"].str.startswith("additional: blinks")]
+    n["add_blinks_checks_min"] = fmt(checks["mu"].max())
+    n["add_blinks_checks_max"] = fmt(checks["mu"].min())
 
     # influence of single control children and strata; placement within the matched set
-    influence = pd.read_csv(os.path.join(results_dir, "posthoc_influence.csv"))
+    influence = pd.read_csv(os.path.join(results_dir, "additional_influence.csv"))
     for name, key in [("leave one control out", "loo_control"), ("leave one stratum out", "loo_stratum")]:
         r = influence[influence["analysis"] == name]
         n[f"{key}_n"] = int(len(r))
         n[f"{key}_mu_min"] = fmt(r["mu"].max())
         n[f"{key}_mu_max"] = fmt(r["mu"].min())
         n[f"{key}_p_min"] = pct(r["p_below"].min(), 10)
-    placement = pd.read_csv(os.path.join(results_dir, "posthoc_placement.csv"))
+    placement = pd.read_csv(os.path.join(results_dir, "additional_placement.csv"))
     n["placement_median_pct"] = f"{100 * placement['percentile'].median():.0f}"
     n["placement_n_below_median"] = int((placement["percentile"] < 0.5).sum())
 
@@ -594,7 +592,7 @@ def posthoc_numbers(results_dir: str, pdr: pd.DataFrame) -> dict:
         p = pdr[pdr["group"] == g]
         n[f"theta_power_median_{g}"] = fmt((p["theta_alpha_db"] + p["alpha_adj_db"]).median(), 1)
 
-    # epochs selected to narrow the difference in alpha power (epochs_posthoc.py), alpha
+    # epochs selected to narrow the difference in alpha power (epoch_checks.py), alpha
     # power in the open-eyes subset, the quality of the aperiodic fits, and the
     # unweighted summaries of the per-child differences
     epochs = pd.read_csv(os.path.join(DATA_DIR, "epochs_alpha_matched.csv"))
@@ -611,7 +609,7 @@ def posthoc_numbers(results_dir: str, pdr: pd.DataFrame) -> dict:
     n["primary_d_mean"] = fmt(d.mean())
 
     # split-half reliability (Spearman-Brown corrected Spearman correlation of the odd and
-    # even epochs) and the chance level of IHS (reliability_posthoc.py)
+    # even epochs) and the chance level of IHS (reliability.py)
     reliability = pd.read_csv(os.path.join(DATA_DIR, "ihs_reliability.csv"))
     for g in ["test", "control"]:
         r = reliability[reliability["group"] == g]
@@ -622,15 +620,15 @@ def posthoc_numbers(results_dir: str, pdr: pd.DataFrame) -> dict:
     n["primary_d_median"] = fmt(d.median())
 
     # the key secondary age model in the individual band (all children; clear rhythm only)
-    age = pd.read_csv(os.path.join(results_dir, "posthoc_age.csv"))
+    age = pd.read_csv(os.path.join(results_dir, "additional_age.csv"))
     bga = age[age["parameter"] == "group x age (per year)"]
-    n.update(posterior("ph_age_iaf_bga", bga.iloc[0], "mean", "lower", "upper"))
-    n.update(posterior("ph_age_iaf_clear_bga", bga.iloc[1], "mean", "lower", "upper"))
-    n["ph_age_iaf_clear_n_test"] = int(bga.iloc[1]["n_test"])
-    n["ph_age_iaf_clear_n_control"] = int(bga.iloc[1]["n_control"])
+    n.update(posterior("add_age_iaf_bga", bga.iloc[0], "mean", "lower", "upper"))
+    n.update(posterior("add_age_iaf_clear_bga", bga.iloc[1], "mean", "lower", "upper"))
+    n["add_age_iaf_clear_n_test"] = int(bga.iloc[1]["n_test"])
+    n["add_age_iaf_clear_n_control"] = int(bga.iloc[1]["n_control"])
 
     # the key secondary without each control child in turn
-    age_loo = pd.read_csv(os.path.join(results_dir, "posthoc_age_influence.csv"))
+    age_loo = pd.read_csv(os.path.join(results_dir, "additional_age_influence.csv"))
     n["age_loo_n"] = int(len(age_loo))
     n["age_loo_bga_min"] = fmt(age_loo["mean"].max())
     n["age_loo_bga_max"] = fmt(age_loo["mean"].min())
@@ -650,14 +648,14 @@ def posthoc_numbers(results_dir: str, pdr: pd.DataFrame) -> dict:
         n[f"{key}_raw_max"] = fmt(r["raw"].min(), 3)
 
     # probabilistic index (Bayesian bootstrap)
-    index = pd.read_csv(os.path.join(results_dir, "posthoc_probability_index.csv")).iloc[0]
+    index = pd.read_csv(os.path.join(results_dir, "additional_probability_index.csv")).iloc[0]
     n["prob_index"] = f"{100 * index['estimate']:.0f}%"
     n["prob_index_lower"] = f"{100 * index['lower']:.0f}%"
     n["prob_index_upper"] = f"{100 * index['upper']:.0f}%"
     n["prob_index_n_pairs"] = int(index["n_pairs"])
 
     # the alpha-power measure: a shorter aperiodic fit, absolute power, the aperiodic
-    # exponent and what ICA retained (spectra_posthoc.py, pdr.py, qc.py)
+    # exponent and what ICA retained (spectral_checks.py, pdr.py, qc.py)
     spectral = pd.read_csv(os.path.join(DATA_DIR, "spectral_checks.csv"))
     qc = pd.read_csv(os.path.join(DATA_DIR, "qc_summary.csv"))
     qc = qc[~qc["excluded"]]
@@ -738,7 +736,7 @@ if __name__ == "__main__":
     if os.path.exists(os.path.join(RESULTS_DIR, "model1.csv")):
         numbers.update(result_numbers(RESULTS_DIR))
         numbers.update(extra_result_numbers(RESULTS_DIR, qc))
-        numbers.update(posthoc_numbers(RESULTS_DIR, pdr))
+        numbers.update(additional_numbers(RESULTS_DIR, pdr))
         fig2_numbers(RESULTS_DIR).to_csv(os.path.join(RESULTS_DIR, "fig2_numbers.csv"), index=False)
     else:
         print("---> no statistical results yet: flow and QC numbers only")

@@ -159,11 +159,11 @@ robustness <- bind_rows(
   matched_set %>% transmute(
     analysis, mu = mean, mu_lower = lower, mu_upper = upper, n_test = primary$n_test, n_control = primary$n_control
   ),
-  # post hoc checks of the competing explanations (analysis_posthoc.R)
-  read_csv("./results/posthoc.csv", show_col_types = FALSE) %>%
+  # additional checks of the competing explanations (analysis_additional.R)
+  read_csv("./results/additional.csv", show_col_types = FALSE) %>%
     filter(analysis %in% c(
-      "post hoc: overlapping alpha power, adjusted", "post hoc: control alpha power degraded with noise",
-      "post hoc: blinks near the analysed epochs", "post hoc: epochs matched for alpha power"
+      "additional: overlapping alpha power, adjusted", "additional: control alpha power degraded with noise",
+      "additional: blinks near the analysed epochs", "additional: epochs matched for alpha power"
     )) %>%
     select(analysis, mu, mu_lower, mu_upper, n_test, n_control)
 ) %>%
@@ -185,10 +185,10 @@ robustness <- bind_rows(
       "prior mu ~ N(0, 2)" = "Prior N(0, 2)",
       "S6 theta" = "Theta (4-7 Hz)",
       "check: matched-set model" = "Matched-set model",
-      "post hoc: overlapping alpha power, adjusted" = "Comparable alpha power, adjusted †",
-      "post hoc: control alpha power degraded with noise" = "Noise added to control recordings †",
-      "post hoc: blinks near the analysed epochs" = "Blinks near most epochs †",
-      "post hoc: epochs matched for alpha power" = "Epochs matched for alpha power †"
+      "additional: overlapping alpha power, adjusted" = "Comparable alpha power, adjusted †",
+      "additional: control alpha power degraded with noise" = "Noise added to control recordings †",
+      "additional: blinks near the analysed epochs" = "Blinks near most epochs †",
+      "additional: epochs matched for alpha power" = "Epochs matched for alpha power †"
     ),
     label = if_else(is.na(n_test), label, paste0(label, " (n = ", n_test, "/", n_control, ")")),
     # the checks that defined robustness
@@ -285,7 +285,7 @@ figS1 <- ggplot() +
   theme(plot.background = element_rect(fill = "white", color = NA))
 save_figure(figS1, "figureS1_flow", width = 6, height = 3.6)
 
-# Supplementary Figure 2: PDR and age -------------------------------------------------------------
+# Supplementary Figure 2: posterior alpha peak and age ---------------------------------------------
 age_grid <- tibble(age = seq(min(pdr$age), max(pdr$age), by = 0.1)) %>%
   mutate(mean = norms$pdr$params$const + norms$pdr$params$age * log(age + 1))
 
@@ -295,15 +295,15 @@ figS2 <- ggplot(pdr %>% filter(pdr_clear), aes(x = age, y = pdr_hz)) +
   geom_hline(yintercept = c(8, 13), color = MUTED, linetype = "dashed", linewidth = 0.3) +
   scale_color_manual(values = COLORS, labels = LABELS) +
   scale_shape_manual(values = SHAPES, labels = LABELS) +
-  labs(x = "Age (years)", y = "Posterior dominant rhythm (Hz)") +
+  labs(x = "Age (years)", y = "Posterior alpha peak (Hz)") +
   theme_paper() +
   theme(legend.position = "top")
 save_figure(figS2, "figureS2_pdr", width = 5, height = 3.5)
 
-# Supplementary Figure 3: interhemispheric strength and alpha power (post hoc) ------------------
-# shaded: the range of posterior alpha power observed in both groups (analysis_posthoc.R)
-posthoc <- read_csv("./results/posthoc.csv", show_col_types = FALSE)
-alpha_range <- posthoc %>% filter(analysis == "post hoc: overlapping alpha power, adjusted")
+# Supplementary Figure 3: interhemispheric strength and alpha power ------------------------------
+# shaded: the range of posterior alpha power observed in both groups (analysis_additional.R)
+additional <- read_csv("./results/additional.csv", show_col_types = FALSE)
+alpha_range <- additional %>% filter(analysis == "additional: overlapping alpha power, adjusted")
 alpha_power <- alpha %>% left_join(pdr %>% select(id, alpha_adj_db), by = "id")
 
 figS3 <- ggplot(alpha_power, aes(x = alpha_adj_db, y = lh_rh)) +
@@ -319,7 +319,7 @@ figS3 <- ggplot(alpha_power, aes(x = alpha_adj_db, y = lh_rh)) +
   theme(legend.position = "top")
 save_figure(figS3, "figureS3_alpha", width = 5, height = 3.5)
 
-# Supplementary Figure 4: posterior power and IHS frequency by frequency (post hoc) -------------
+# Supplementary Figure 4: posterior power and IHS frequency by frequency -------------------------
 # group means with 95% intervals (mean +/- 1.96 SE) over all analysable children
 by_freq <- read_csv("./data/ihs_by_frequency.csv", show_col_types = FALSE) %>%
   pivot_longer(c(power_db, ihs), names_to = "measure", values_to = "value") %>%

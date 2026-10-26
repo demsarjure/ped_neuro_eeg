@@ -1,6 +1,6 @@
 """
-Post hoc checks of the IHS estimate, not part of the analysis plan (25 October
-2026).
+Additional checks of the IHS estimate (analysis_spec.md, Additional
+analyses).
 
 1. Split-half reliability: IHS, and posterior alpha power, from the odd and from
    the even analysed epochs of each child, correlated across children in each

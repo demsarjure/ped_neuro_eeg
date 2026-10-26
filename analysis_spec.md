@@ -138,22 +138,22 @@ The sample was restricted to children aged 2–9 years in completed years (`AGE_
 
 The freeze manifests describe the state at the freeze, before this amendment.
 
-## Post hoc analyses (25 October 2026, not part of the plan)
+## Additional analyses (25 October 2026)
 
-Added after the group comparison, in response to reviewer-style questions; reported as post hoc (analysis_posthoc.R):
+Added after the group comparison, in response to reviewer-style questions (analysis_additional.R):
 
 - **Within the hemispheres:** Model 1 for intrahemispheric strength (the mean dbWPLI over the 56 pairs within each hemisphere of the 16 IHS electrodes; column `intra` of the metrics) and for the within-child contrast IHS − intrahemispheric strength.
 - **Comparable alpha power:** both groups restricted to the range of aperiodic-adjusted posterior alpha power observed in both groups, then Model 1 with the child-minus-control alpha-power difference as a covariate (as in S8b, but without extrapolation).
-- **Open eyes:** blinks located around the analysed epochs with the blink-rate detector before ICA (blinks_posthoc.py; data/blinks_analysed.csv); Model 1 in the children with a blink within 15 s of at least 90% of their analysed epochs.
-- **Added noise:** independent 1/f noise added to the analysed epochs of each matched control child until its alpha power matched the mean of the CTNNB1 children of its stratum (bisection; noise_posthoc.py; data/noise_injection.csv); alpha connectome recomputed; Model 1.
+- **Open eyes:** blinks located around the analysed epochs with the blink-rate detector before ICA (blinks.py; data/blinks_analysed.csv); Model 1 in the children with a blink within 15 s of at least 90% of their analysed epochs.
+- **Added noise:** independent 1/f noise added to the analysed epochs of each matched control child until its alpha power matched the mean of the CTNNB1 children of its stratum (bisection; noise_injection.py; data/noise_injection.csv); alpha connectome recomputed; Model 1.
 - **Age in the individual band:** Model 2 refitted to IHS in the individual band.
 - **Open eyes, checks:** thresholds of 50% and 75%, and a ±5-s window with a 50% threshold.
 - **Alpha power as an outcome:** Model 1 for the aperiodic-adjusted posterior alpha power.
 - **Influence and placement:** the primary refitted without each matched control child and without each stratum in turn, and without the two controls furthest above their stratum mean together; each CTNNB1 child's percentile among its matched controls (ties count half); a probabilistic index with a Bayesian-bootstrap interval; a table of the strata (results/strata.csv).
 - **Sleep spindles:** the primary without the control children with a spindle rate of at least 0.5/min.
 - **Age model checks:** Model 2 without each control child in turn, and in the individual band in children with a clear rhythm only.
-- **Alpha-power measure:** alpha power with the aperiodic fit over 1.5–20 Hz and as absolute power (spectra_posthoc.py; data/spectral_checks.csv).
-- **Epochs matched for alpha power:** IHS from the 50 analysed epochs with the least (controls) or most (CTNNB1 children) posterior alpha power, Model 1 (epochs_posthoc.py; data/epochs_alpha_matched.csv).
-- **Reliability and chance level:** split-half (odd/even epochs) reliability of IHS and posterior alpha power, Spearman–Brown corrected; chance level of IHS from 200 shuffles of the right-hemisphere epochs (reliability_posthoc.py; data/ihs_reliability.csv).
+- **Alpha-power measure:** alpha power with the aperiodic fit over 1.5–20 Hz and as absolute power (spectral_checks.py; data/spectral_checks.csv).
+- **Epochs matched for alpha power:** IHS from the 50 analysed epochs with the least (controls) or most (CTNNB1 children) posterior alpha power, Model 1 (epoch_checks.py; data/epochs_alpha_matched.csv).
+- **Reliability and chance level:** split-half (odd/even epochs) reliability of IHS and posterior alpha power, Spearman–Brown corrected; chance level of IHS from 200 shuffles of the right-hemisphere epochs (reliability.py; data/ihs_reliability.csv).
 - **Frequency by frequency:** dbWPLI in 1-Hz bins (2–30 Hz) and posterior power, group means (data/ihs_by_frequency.csv; Supp Fig 4).
 

@@ -1,13 +1,13 @@
-# Post hoc analyses, not part of the analysis plan (25 October 2026) --------------------
+# Additional analyses (analysis_spec.md, Additional analyses) ---------------------------
 # A1: alpha power. Children whose posterior alpha power lies in the range observed in
 #     both groups, compared with the alpha-power difference as a covariate, so that
 #     the adjustment does not extrapolate beyond the observed differences (unlike S8b).
 # A2: connectivity within the hemispheres, and the within-child contrast between
 #     interhemispheric and intrahemispheric strength (the same 16 electrodes).
 # A3: eye state. Children with a blink within 15 s of at least 90% of their analysed
-#     epochs (blinks_posthoc.py), whose eyes were open in nearly all of them.
+#     epochs (blinks.py), whose eyes were open in nearly all of them.
 # A4: signal-to-noise. The matched control children with noise added until their
-#     alpha power matched that of the CTNNB1 children of their stratum (noise_posthoc.py).
+#     alpha power matched that of the CTNNB1 children of their stratum (noise_injection.py).
 # A5: the key secondary age model (Model 2) in the individual band.
 # A6: influence of single control children and strata on the main estimate, the
 #     placement of each CTNNB1 child within its matched control children, the
@@ -36,8 +36,8 @@ results <- list()
 add <- function(r) results[[length(results) + 1]] <<- r$summary
 
 # A2: within the hemispheres -----------------------------------------------------------
-add(fit_model1(model1, alpha, "intra", "post hoc: within the hemispheres", "alpha"))
-add(fit_model1(model1, alpha, "lh_rh_minus_intra", "post hoc: between minus within the hemispheres", "alpha"))
+add(fit_model1(model1, alpha, "intra", "additional: within the hemispheres", "alpha"))
+add(fit_model1(model1, alpha, "lh_rh_minus_intra", "additional: between minus within the hemispheres", "alpha"))
 
 # A1: overlapping alpha power, adjusted for it ------------------------------------------
 # both groups are restricted to the range of posterior alpha power observed in both
@@ -49,7 +49,7 @@ alpha_range <- alpha %>%
 in_range <- alpha %>%
   filter(alpha_adj_db >= alpha_range$low, alpha_adj_db <= alpha_range$high)
 overlap_fit <- fit_model1(
-  model1, in_range, "lh_rh", "post hoc: overlapping alpha power, adjusted", "alpha",
+  model1, in_range, "lh_rh", "additional: overlapping alpha power, adjusted", "alpha",
   covariates = c("alpha_adj_db")
 )
 add(overlap_fit)
@@ -58,13 +58,13 @@ add(overlap_fit)
 BLINK_MIN_FRACTION <- 0.9
 blinks <- read_csv("./data/blinks_analysed.csv", show_col_types = FALSE)
 eyes_open <- blinks %>% filter(epochs_near_blink >= BLINK_MIN_FRACTION) %>% pull(id)
-add(fit_model1(model1, alpha %>% filter(id %in% eyes_open), "lh_rh", "post hoc: blinks near the analysed epochs", "alpha"))
+add(fit_model1(model1, alpha %>% filter(id %in% eyes_open), "lh_rh", "additional: blinks near the analysed epochs", "alpha"))
 # other thresholds and a stricter window, as checks
 for (rule in list(c("epochs_near_blink", 0.5), c("epochs_near_blink", 0.75), c("epochs_near_blink_5s", 0.5))) {
   ids <- blinks %>% filter(.data[[rule[1]]] >= as.numeric(rule[2])) %>% pull(id)
   add(fit_model1(
     model1, alpha %>% filter(id %in% ids), "lh_rh",
-    paste0("post hoc: blinks check (", rule[1], " >= ", rule[2], ")"), "alpha"
+    paste0("additional: blinks check (", rule[1], " >= ", rule[2], ")"), "alpha"
   ))
 }
 
@@ -73,22 +73,22 @@ noise <- read_csv("./data/noise_injection.csv", show_col_types = FALSE)
 alpha_noise <- alpha %>%
   left_join(noise %>% select(id, lh_rh_noise), by = "id") %>%
   mutate(lh_rh = if_else(group == "control" & !is.na(lh_rh_noise), lh_rh_noise, lh_rh))
-add(fit_model1(model1, alpha_noise, "lh_rh", "post hoc: control alpha power degraded with noise", "alpha"))
+add(fit_model1(model1, alpha_noise, "lh_rh", "additional: control alpha power degraded with noise", "alpha"))
 
 # the adjustment estimates the difference at an alpha-power difference of zero, which
 # should lie within the observed differences
 alpha_diff <- overlap_fit$differences$alpha_adj_db
 
-# A8: epochs matched for alpha power (epochs_posthoc.py): IHS from the 50 epochs with the
+# A8: epochs matched for alpha power (epoch_checks.py): IHS from the 50 epochs with the
 #     least (control children) or most (CTNNB1 children) posterior alpha power ----------
 epochs_matched <- read_csv("./data/epochs_alpha_matched.csv", show_col_types = FALSE)
 add(fit_model1(
   model1, alpha %>% left_join(epochs_matched %>% select(id, lh_rh_alpha_matched_epochs), by = "id"),
-  "lh_rh_alpha_matched_epochs", "post hoc: epochs matched for alpha power", "alpha"
+  "lh_rh_alpha_matched_epochs", "additional: epochs matched for alpha power", "alpha"
 ))
 
 # A6: posterior alpha power as an outcome ------------------------------------------------
-add(fit_model1(model1, alpha, "alpha_adj_db", "post hoc: posterior alpha power", "alpha"))
+add(fit_model1(model1, alpha, "alpha_adj_db", "additional: posterior alpha power", "alpha"))
 
 # A6: influence of single control children and strata on the main estimate -------------
 strata <- matched_strata(alpha)
@@ -140,12 +140,12 @@ deviations <- alpha %>%
   ungroup() %>%
   arrange(desc(z))
 top_two <- head(deviations$id, 2)
-add(fit_model1(model1, alpha %>% filter(!id %in% top_two), "lh_rh", "post hoc: without the two highest control children", "alpha"))
+add(fit_model1(model1, alpha %>% filter(!id %in% top_two), "lh_rh", "additional: without the two highest control children", "alpha"))
 
 # A7: without control children with spindles (rate of at least 0.5/min) ----------------
 qc <- read_csv("./data/qc_summary.csv", show_col_types = FALSE)
 spindles <- qc %>% filter(spindle_flag) %>% pull(id)
-add(fit_model1(model1, alpha %>% filter(!id %in% spindles), "lh_rh", "post hoc: without spindles", "alpha"))
+add(fit_model1(model1, alpha %>% filter(!id %in% spindles), "lh_rh", "additional: without spindles", "alpha"))
 
 # A7: probabilistic index: the probability that a CTNNB1 child's IHS is below that of a
 # matched control child (ties count half), averaged over the matched pairs, with a
@@ -166,7 +166,7 @@ pi_draws <- replicate(10000, {
   sum(w * pairs$below) / sum(w)
 })
 prob_index <- tibble(
-  analysis = "post hoc: probabilistic index",
+  analysis = "additional: probabilistic index",
   estimate = mean(pairs$below),
   lower = unname(quantile(pi_draws, 0.025)),
   upper = unname(quantile(pi_draws, 0.975)),
@@ -175,11 +175,11 @@ prob_index <- tibble(
 
 # A5: age model in the individual band ---------------------------------------------------
 age_iaf <- bind_rows(
-  fit_model2(model2, load_metrics("iaf"), "lh_rh", "post hoc: key secondary in the individual band", "iaf")$summary,
+  fit_model2(model2, load_metrics("iaf"), "lh_rh", "additional: key secondary in the individual band", "iaf")$summary,
   # the band follows the child's own rhythm only where one was found
   fit_model2(
     model2, load_metrics("iaf") %>% semi_join(pdr %>% filter(pdr_clear), by = "id"), "lh_rh",
-    "post hoc: key secondary in the individual band, clear rhythm only", "iaf"
+    "additional: key secondary in the individual band, clear rhythm only", "iaf"
   )$summary
 )
 
@@ -190,24 +190,24 @@ age_loo_control <- map_dfr(alpha$id[alpha$group == "control"], function(left_out
     mutate(left_out = left_out, .before = 1)
 })
 
-posthoc <- bind_rows(results) %>%
+additional <- bind_rows(results) %>%
   mutate(
     alpha_low = alpha_range$low,
     alpha_high = alpha_range$high,
-    alpha_diff_min = if_else(analysis == "post hoc: overlapping alpha power, adjusted", min(alpha_diff), NA_real_),
-    alpha_diff_max = if_else(analysis == "post hoc: overlapping alpha power, adjusted", max(alpha_diff), NA_real_)
+    alpha_diff_min = if_else(analysis == "additional: overlapping alpha power, adjusted", min(alpha_diff), NA_real_),
+    alpha_diff_max = if_else(analysis == "additional: overlapping alpha power, adjusted", max(alpha_diff), NA_real_)
   )
 
 # save ---------------------------------------------------------------------------------
-write_csv(posthoc, "./results/posthoc.csv")
-write_csv(age_iaf, "./results/posthoc_age.csv")
-write_csv(bind_rows(loo_control, loo_stratum), "./results/posthoc_influence.csv")
-write_csv(placement, "./results/posthoc_placement.csv")
+write_csv(additional, "./results/additional.csv")
+write_csv(age_iaf, "./results/additional_age.csv")
+write_csv(bind_rows(loo_control, loo_stratum), "./results/additional_influence.csv")
+write_csv(placement, "./results/additional_placement.csv")
 write_csv(strata_table, "./results/strata.csv")
-write_csv(prob_index, "./results/posthoc_probability_index.csv")
-write_csv(age_loo_control, "./results/posthoc_age_influence.csv")
+write_csv(prob_index, "./results/additional_probability_index.csv")
+write_csv(age_loo_control, "./results/additional_age_influence.csv")
 
-print(posthoc %>% select(analysis, n_test, n_control, mu, mu_lower, mu_upper, p_below, problems))
+print(additional %>% select(analysis, n_test, n_control, mu, mu_lower, mu_upper, p_below, problems))
 print(age_iaf %>% select(analysis, parameter, mean, lower, upper, p_below, problems))
 print(paste("Alpha power range in both groups:", round(alpha_range$low, 2), "to", round(alpha_range$high, 2), "dB"))
 print(paste("Alpha-power differences (control SDs):", round(min(alpha_diff), 2), "to", round(max(alpha_diff), 2)))
