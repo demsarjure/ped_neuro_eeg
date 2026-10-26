@@ -177,7 +177,6 @@ fieldtrip-20250107/
 # --- revision (Brain Communications) ---
 # confidential review material and manuscript drafts (public repo)
 temp/
-manuscript/
 # per-subject QC images (internal)
 qc/
 # internal archive of old-pipeline numbers

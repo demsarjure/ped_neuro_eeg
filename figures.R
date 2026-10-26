@@ -65,7 +65,7 @@ qc <- read_csv("./data/qc_summary.csv", show_col_types = FALSE)
 pdr <- read_csv("./data/pdr.csv", show_col_types = FALSE)
 norms <- fromJSON("./data/pdr_norms.json")
 
-# Figure 3: interhemispheric connectivity in the Model 1 matched sample -----------------
+# Figure 4: interhemispheric connectivity in the Model 1 matched sample -----------------
 # B: mean of the matched CTNNB1 children's matrices; A: mean over the same children
 # of their matched controls' mean matrix; C: B minus A (the primary comparison)
 interhemispheric <- function(id, group) {
@@ -122,19 +122,19 @@ div_scale <- scale_fill_gradient2(
   limits = c(-div_limit, div_limit), name = "Difference"
 )
 
-fig3 <- plot_grid(
+fig4 <- plot_grid(
   matrix_panel(control_m, "A  Matched controls", level_scale),
   matrix_panel(test_m, "B  CTNNB1", level_scale),
   matrix_panel(diff_m, "C  CTNNB1 − controls", div_scale),
   nrow = 1
 )
-save_figure(fig3, "figure3_matrices", width = 7.5, height = 2.8)
+save_figure(fig4, "figure4_matrices", width = 7.5, height = 2.8)
 
-# Figure 4: per-child differences and robustness ----------------------------------------------
+# Figure 5: per-child differences and robustness ----------------------------------------------
 primary <- model1 %>% filter(analysis == "primary")
 primary_d <- differences %>% filter(analysis == "primary")
 
-fig4a <- ggplot(primary_d, aes(x = age, y = raw)) +
+fig5a <- ggplot(primary_d, aes(x = age, y = raw)) +
   annotate(
     "rect", xmin = -Inf, xmax = Inf, ymin = primary$raw_lower, ymax = primary$raw_upper,
     fill = COLORS["test"], alpha = 0.15
@@ -199,23 +199,23 @@ robustness <- bind_rows(
     label = fct_rev(fct_inorder(label))
   )
 
-fig4b <- ggplot(robustness, aes(y = label, x = mu, xmin = mu_lower, xmax = mu_upper)) +
+fig5b <- ggplot(robustness, aes(y = label, x = mu, xmin = mu_lower, xmax = mu_upper)) +
   geom_vline(xintercept = 0, color = MUTED, linewidth = 0.4) +
   geom_pointinterval(color = INK, point_size = 1.8, interval_size = 0.8) +
   labs(title = "B", x = "Standardised difference\n(95% credible interval)", y = NULL) +
   theme_paper()
 
-fig4 <- plot_grid(fig4a, fig4b, nrow = 1, rel_widths = c(1, 1.25))
-save_figure(fig4, "figure4_differences", width = 7.5, height = 3.2)
+fig5 <- plot_grid(fig5a, fig5b, nrow = 1, rel_widths = c(1, 1.25))
+save_figure(fig5, "figure5_differences", width = 7.5, height = 3.2)
 
-# Figure 5: interhemispheric strength and age (Model 2 sample) ----------------------------------
+# Figure 6: interhemispheric strength and age (Model 2 sample) ----------------------------------
 # 95% bands; each group's line spans its observed ages, so together the lines
 # span the ages of the Model 2 sample (analysis_age.R)
 lines_ihs <- model2_lines %>% filter(metric == "lh_rh")
 ages <- seq(min(lines_ihs$age), max(lines_ihs$age))
 young <- alpha %>% filter(age >= min(ages), age <= max(ages))
 
-fig5 <- ggplot() +
+fig6 <- ggplot() +
   geom_ribbon(data = lines_ihs, aes(x = age, ymin = lower, ymax = upper, fill = group), alpha = 0.15) +
   geom_line(data = lines_ihs, aes(x = age, y = mean, color = group), linewidth = 0.7) +
   geom_point(
@@ -229,9 +229,9 @@ fig5 <- ggplot() +
   labs(x = "Age (years)", y = "Interhemispheric strength (dbWPLI)") +
   theme_paper() +
   theme(legend.position = "top")
-save_figure(fig5, "figure5_age", width = 5, height = 3.5)
+save_figure(fig6, "figure6_age", width = 5, height = 3.5)
 
-# Figure 6: cohort flow -------------------------------------------------------------------------
+# Supplementary Figure 1: cohort flow -----------------------------------------------------------
 n_rec <- qc %>% count(group, name = "n")
 n_excl <- qc %>% filter(excluded) %>% count(group, name = "n")
 n_an <- qc %>% filter(!excluded) %>% count(group, name = "n")
@@ -270,7 +270,7 @@ arrows <- tribble(
   3, 3.75, 3.3, 3, 2.5, 2.05, 3, 1.55, 1.1
 )
 
-fig6 <- ggplot() +
+figS1 <- ggplot() +
   geom_segment(
     data = arrows, aes(x = x, xend = x, y = y, yend = yend),
     arrow = arrow(length = unit(0.06, "in"), type = "closed"), color = MUTED, linewidth = 0.4
@@ -283,13 +283,13 @@ fig6 <- ggplot() +
   ylim(0.3, 4.5) +
   theme_void() +
   theme(plot.background = element_rect(fill = "white", color = NA))
-save_figure(fig6, "figure6_flow", width = 6, height = 3.6)
+save_figure(figS1, "figureS1_flow", width = 6, height = 3.6)
 
-# Supplementary figure: PDR and age ---------------------------------------------------------------
+# Supplementary Figure 2: PDR and age -------------------------------------------------------------
 age_grid <- tibble(age = seq(min(pdr$age), max(pdr$age), by = 0.1)) %>%
   mutate(mean = norms$pdr$params$const + norms$pdr$params$age * log(age + 1))
 
-figS1 <- ggplot(pdr %>% filter(pdr_clear), aes(x = age, y = pdr_hz)) +
+figS2 <- ggplot(pdr %>% filter(pdr_clear), aes(x = age, y = pdr_hz)) +
   geom_line(data = age_grid, aes(x = age, y = mean), color = MUTED, linewidth = 0.6) +
   geom_point(aes(color = group, shape = group), size = 1.8, alpha = 0.8, position = position_jitter(width = 0.15, height = 0, seed = 42)) +
   geom_hline(yintercept = c(8, 13), color = MUTED, linetype = "dashed", linewidth = 0.3) +
@@ -298,9 +298,9 @@ figS1 <- ggplot(pdr %>% filter(pdr_clear), aes(x = age, y = pdr_hz)) +
   labs(x = "Age (years)", y = "Posterior dominant rhythm (Hz)") +
   theme_paper() +
   theme(legend.position = "top")
-save_figure(figS1, "figureS1_pdr", width = 5, height = 3.5)
+save_figure(figS2, "figureS2_pdr", width = 5, height = 3.5)
 
-# Supplementary figure: interhemispheric strength and alpha power (post hoc) --------------------
+# Supplementary Figure 3: interhemispheric strength and alpha power (post hoc) ------------------
 # shaded: the range of posterior alpha power observed in both groups (analysis_posthoc.R)
 posthoc <- read_csv("./results/posthoc.csv", show_col_types = FALSE)
 alpha_range <- posthoc %>% filter(analysis == "post hoc: overlapping alpha power, adjusted")
@@ -319,7 +319,7 @@ figS3 <- ggplot(alpha_power, aes(x = alpha_adj_db, y = lh_rh)) +
   theme(legend.position = "top")
 save_figure(figS3, "figureS3_alpha", width = 5, height = 3.5)
 
-# Supplementary figure: posterior power and IHS frequency by frequency (post hoc) ---------------
+# Supplementary Figure 4: posterior power and IHS frequency by frequency (post hoc) -------------
 # group means with 95% intervals (mean +/- 1.96 SE) over all analysable children
 by_freq <- read_csv("./data/ihs_by_frequency.csv", show_col_types = FALSE) %>%
   pivot_longer(c(power_db, ihs), names_to = "measure", values_to = "value") %>%
