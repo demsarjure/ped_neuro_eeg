@@ -3,7 +3,7 @@ library(cmdstanr)
 library(posterior)
 library(tidyverse)
 
-# sampling settings (analysis_spec.md)
+# sampling settings
 SEED <- 42
 CHAINS <- 4
 ITER_WARMUP <- 1000
@@ -13,8 +13,7 @@ REFIT_ADAPT_DELTA <- 0.99
 REFIT_MAX_TREEDEPTH <- 12
 
 # compile a model ---------------------------------------------------------------
-# compiled into a temporary directory so the tracked binaries in models/ stay
-# untouched
+# compiled into a temporary directory so that no binaries are written to models/
 compile_model <- function(name) {
   cmdstan_model(
     file.path("models", paste0(name, ".stan")),

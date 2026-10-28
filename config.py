@@ -16,12 +16,10 @@ REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(REPO_ROOT, "data")
 CONNECTOME_DIR = os.path.join(DATA_DIR, "connectomes")
 QC_DIR = os.path.join(REPO_ROOT, "qc")
-RESULTS_DIR = os.path.join(REPO_ROOT, "results")
 
 # study sample -----------------------------------------------------------------
 # children aged 2-9 years in completed years, the age range of the main and key
-# secondary analyses; recordings outside it are not analysed (amendment of
-# 24 October 2026, see analysis_spec.md)
+# secondary analyses; recordings outside it are not analysed
 AGE_RANGE = (2, 9)
 
 

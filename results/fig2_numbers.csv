@@ -1,6 +1,0 @@
-metric,outcome,n_ctnnb1,n_controls,mean_ctnnb1,mean_matched_controls,difference,difference_lower,difference_upper,mu,mu_lower,mu_upper,P
-lh_rh,Interhemispheric strength,25,50,0.006,0.018,−0.014,−0.021,−0.007,−0.58,−0.87,−0.28,>99.9%
-laq_raq,Left and right anterior quadrants,25,50,0.004,0.016,−0.014,−0.025,−0.004,−0.41,−0.70,−0.11,99.7%
-lpq_rpq,Left and right posterior quadrants,25,50,0.008,0.018,−0.011,−0.019,−0.003,−0.44,−0.77,−0.11,99.5%
-laq_rpq,Left anterior and right posterior quadrants,25,50,0.005,0.023,−0.020,−0.030,−0.009,−0.54,−0.83,−0.25,>99.9%
-raq_lpq,Right anterior and left posterior quadrants,25,50,0.007,0.021,−0.016,−0.026,−0.006,−0.53,−0.86,−0.21,99.9%

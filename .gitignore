@@ -174,9 +174,10 @@ cython_debug/
 eeglab2024.2/
 fieldtrip-20250107/
 
-# --- revision (Brain Communications) ---
+# --- internal material, not public ---
 # confidential review material and manuscript drafts (public repo)
 temp/
+submission/
 # per-subject QC images (internal)
 qc/
 # internal archive of old-pipeline numbers

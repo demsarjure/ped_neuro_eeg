@@ -1,5 +1,6 @@
-# Python environment used for the analysis (python 3.12.2)
-mne==1.10.0.dev136+gd19316613
+# Python environment used for the analysis (python 3.12.2); mne was a development
+# version (1.10.0.dev136), so it is installed from its GitHub commit
+mne @ git+https://github.com/mne-tools/mne-python.git@d193166134dcc30c3c2bf154ec188f63913d6ea6
 mne-bids==0.16.0
 mne-connectivity==0.7.0
 bctpy==0.6.1
